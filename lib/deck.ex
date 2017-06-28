@@ -7,8 +7,11 @@ defmodule Deck do
   def new() do
     greenBeans = for _n <- 1..14 do %Beans.GreenBean{} end
     coffeeBeans = for _n <- 1..24 do %Beans.CoffeeBean{} end
+    blueBeans = for _n <- 1..20 do %Beans.BlueBean{} end
+    waxBeans = for _n <- 1..22 do %Beans.WaxBean{} end
+    blackEyedBeans = for _n <- 1..10 do %Beans.BlackEyedBean{} end
 
-    Enum.shuffle(greenBeans ++ coffeeBeans)
+    Enum.shuffle(greenBeans ++ coffeeBeans ++ blueBeans ++ waxBeans ++ blackEyedBeans)
   end
 
   @spec draw(deck()) :: {Beans.bean(), deck()}
