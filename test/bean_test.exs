@@ -48,9 +48,24 @@ defmodule BeanTest do
     assert_raise(CaseClauseError, fn -> BeanField.plant_bean(field, 3, %Beans.CoffeeBean{}) end)
 
     field = BeanField.buy_field(field)
-    field = %{3 => beans} = BeanField.plant_bean(field, 3, %Beans.CoffeeBean{})
+    %{3 => beans} = BeanField.plant_bean(field, 3, %Beans.CoffeeBean{})
     assert length(beans) == 1
     assert Enum.all?(beans, &(&1 == %Beans.CoffeeBean{}))
+  end
+
+  test "Scoring test" do
+    field = BeanField.new()
+    planted = List.foldl(Enum.into(1..5, []), field, fn(_, f) -> BeanField.plant_bean(f, 1, %Beans.BlueBean{}) end)
+    {_, {score, _}} = BeanField.harvest_field(planted, 1)
+    assert length(score) == 1
+
+    planted = List.foldl(Enum.into(1..8, []), field, fn(_, f) -> BeanField.plant_bean(f, 1, %Beans.BlueBean{}) end)
+    {_, {score, _}} = BeanField.harvest_field(planted, 1)
+    assert length(score) == 3
+
+    planted = List.foldl(Enum.into(1..100, []), field, fn(_, f) -> BeanField.plant_bean(f, 1, %Beans.BlueBean{}) end)
+    {_, {score, _}} = BeanField.harvest_field(planted, 1)
+    assert length(score) == 4
   end
 
 end
