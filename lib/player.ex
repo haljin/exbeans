@@ -32,6 +32,7 @@ defmodule Player do
 
   def handle_call({:join_game, gameName}, _from, %Player.State{name: name} = state) do
     :ok = BeanGame.register_player(gameName, name)
+    Process.monitor(gameName)
     {:reply, :ok, state}
   end
   def handle_call(:get_hand, _from, %Player.State{hand: hand} = state) do
@@ -40,5 +41,9 @@ defmodule Player do
 
   def handle_cast({:deal_card, card}, %Player.State{hand: hand} = state) do
     {:noreply, %Player.State{state | hand: Hand.add_card(card, hand)}}
+  end
+
+  def handle_info({:DOWN, _, :process, _pid, _reason}, state) do
+    {:stop, :normal, state}
   end
 end
