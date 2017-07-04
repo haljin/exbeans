@@ -41,7 +41,7 @@ defmodule BeanGame do
     {:noreply, state}
   end
 
-  defp deal_cards(0, [player1, player2], deck) do
+  defp deal_cards(0, _, deck) do
       deck
   end
   defp deal_cards(nth, [player1, player2], deck) do
