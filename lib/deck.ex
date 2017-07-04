@@ -5,10 +5,9 @@ defmodule Deck do
 
   @spec new() :: deck()
   def new() do
-    allBeans = [%Beans.GreenBean{}, %Beans.CoffeeBean{}, %Beans.BlueBean{}, %Beans.WaxBean{}, %Beans.BlackEyedBean{}]
-    deck = for beanType <- allBeans do for _n <- 1..Beans.Bean.count(beanType) do beanType end end
-
-    Enum.shuffle(List.flatten(deck))
+    generate_beans |>
+    List.flatten |>
+    Enum.shuffle
   end
 
   @spec draw(deck()) :: {Beans.bean(), deck()}
@@ -31,6 +30,11 @@ defmodule Deck do
   end
   def add_to_deck(bean, deck) do
     deck ++ [bean]
+  end
+
+  defp generate_beans() do
+    allBeans = [%Beans.GreenBean{}, %Beans.CoffeeBean{}, %Beans.BlueBean{}, %Beans.WaxBean{}, %Beans.BlackEyedBean{}]
+    for beanType <- allBeans do for _n <- 1..Beans.Bean.count(beanType) do beanType end end
   end
 
 end
