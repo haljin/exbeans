@@ -21,7 +21,5 @@ defmodule GameTest do
 
     assert length(hand1) == 5
     assert length(hand2) == 5
-
-
   end
 end
