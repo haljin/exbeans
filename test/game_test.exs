@@ -3,7 +3,7 @@ defmodule GameTest do
   @moduledoc false
 
   test "GameBoard" do
-    {:ok, pid} = BeanGame.start_link(:testGame)
+    {:ok, pid} = BeanGame.Game.start_link(:testGame)
     ^pid = Process.whereis(:testGame)
     assert Process.alive?(pid)
   end

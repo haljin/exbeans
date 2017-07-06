@@ -1,6 +1,10 @@
 defmodule Player do
-  @moduledoc false
   use GenStateMachine, callback_mode: [:state_functions, :state_enter]
+  @game_api Application.fetch_env!(:exbeans, :game_api)
+  @moduledoc false
+
+
+  @type playerName :: atom()
 
   defmodule State do
     defstruct name: nil, game: nil, hand: Hand.new(), field: BeanField.new(), score: 0, cards_played: 0
@@ -39,12 +43,12 @@ defmodule Player do
     GenStateMachine.call(name, {:harvest, field})
   end
 
-  def play_mid_card(name, card, fieldIndex) do
-    GenStateMachine.call(name, {:take_mid_card, card, fieldIndex})
+  def play_mid_card(name, cardIndex, fieldIndex) do
+    GenStateMachine.call(name, {:play_mid_card, cardIndex, fieldIndex})
   end
 
-  def discard_mid_card(name, card) do
-    GenStateMachine.cast(name, {:discard_mid_card, card})
+  def discard_mid_card(name, cardIndex) do
+    GenStateMachine.cast(name, {:discard_mid_card, cardIndex})
   end
 
   def purchase_third_field(name) do
@@ -63,6 +67,14 @@ defmodule Player do
     GenStateMachine.cast(name, :start_turn)
   end
 
+  def end_turn(name) do
+    GenStateMachine.cast(name, :end_turn)
+  end
+
+  def skip_initial(name) do
+    GenStateMachine.cast(name, :skip_initial)
+  end
+
 ##  GenServer callbacks
   def init([name]) do
     {:ok, :waiting_to_start, %Player.State{name: name}}
@@ -72,7 +84,7 @@ defmodule Player do
     :keep_state_and_data
   end
   def waiting_to_start({:call, from}, {:join_game, gameName}, %Player.State{name: name} = state) do
-    :ok = BeanGame.register_player(gameName, name)
+    :ok = @game_api.register_player(gameName, name)
     GenStateMachine.reply(from, :ok)
     {:next_state, :no_turn, %Player.State{state | game: gameName}}
   end
@@ -80,12 +92,15 @@ defmodule Player do
   def no_turn(:enter, _, _) do
     :keep_state_and_data
   end
-  def no_turn(:cast, :start_turn, %Player.State{name: name, game: gameName} = state) do
+  def no_turn(:cast, :start_turn, %Player.State{name: name}) do
     IO.puts("[#{name}] Turn start!")
-    case BeanGame.get_mid_cards(gameName) do
-      [] -> {:next_state, :play_cards, state}
-      _ -> {:next_state, :offered_bonus_cards, state}
-    end
+    :keep_state_and_data
+  end
+  def no_turn(:cast, :skip_initial, %Player.State{hand: []} = state) do
+    {:next_state, :bonus_cards, state}
+  end
+  def no_turn(:cast, :skip_initial, state) do
+    {:next_state, :play_cards, state}
   end
   def no_turn(eventType, event, state) do
     handle_event(eventType, event, state)
@@ -100,15 +115,21 @@ defmodule Player do
       {:error, :not_allowed} ->
         GenStateMachine.reply(from, {:error, :illegal_move})
         :keep_state_and_data
-      newField when n <= 1->
+      newField when n < 1 and rest == [] ->
+        GenStateMachine.reply(from, :ok)
+        {:next_state, :bonus_cards, %Player.State{state | field: newField, hand: rest, cards_played: n + 1}}
+      newField when n < 1->
         GenStateMachine.reply(from, :ok)
         {:keep_state, %Player.State{state | field: newField, hand: rest, cards_played: n + 1}}
+      newField when rest == [] ->
+        GenStateMachine.reply(from, :ok)
+        {:next_state, :bonus_cards, %Player.State{state | field: newField, hand: rest}}
       newField ->
         GenStateMachine.reply(from, :ok)
-        {:next_state, :discard, %Player.State{state | field: newField, hand: rest, cards_played: 0}}
+        {:next_state, :discard, %Player.State{state | field: newField, hand: rest}}
     end
   end
-  def play_cards({:call, from}, :pass, %Player.State{cards_played: 0} = state) do
+  def play_cards({:call, from}, :pass, %Player.State{cards_played: 0}) do
     GenStateMachine.reply(from, {:error, :illegal_move})
     :keep_state_and_data
   end
@@ -120,15 +141,12 @@ defmodule Player do
     handle_event(eventType, event, state)
   end
 
-  def discard(:enter, _, %Player.State{hand: []} = state) do
-    {:next_state, :bonus_cards, state}
-  end
   def discard(:enter, _, _) do
     :keep_state_and_data
   end
   def discard(:cast, {:discard, n}, %Player.State{hand: hand, game: gameName} = state) do
     {discarded, newHand} = Hand.discard_card(hand, n + 1)
-    BeanGame.discard_cards(gameName, [discarded])
+    @game_api.discard_cards(gameName, [discarded])
     {:next_state, :bonus_cards, %Player.State{ state | hand: newHand}}
   end
   def discard({:call, from}, :pass, state) do
@@ -139,38 +157,63 @@ defmodule Player do
     handle_event(eventType, event, state)
   end
 
-  def bonus_cards(:enter, _, %Player.State{game: gameName} = state) do
-    BeanGame.new_bonus_cards(gameName)
+  def bonus_cards(:enter, _, %Player.State{game: gameName}) do
+    @game_api.new_mid_cards(gameName)
+    :keep_state_and_data
+  end
+  def bonus_cards(:cast, :end_turn, %Player.State{name: player} = state) do
+    IO.puts("[#{player}] Turn ended.")
+    {:next_state, :no_turn, state}
+  end
+  def bonus_cards({:call, from}, {:play_mid_card, cardIndex, fieldIndex}, %Player.State{field: field, game: gameName} = state) do
+    with {:ok, card}       <- @game_api.get_mid_card(gameName, cardIndex),
+         %{} = newField    <- BeanField.plant_bean(field, fieldIndex, card),
+         :ok               <- @game_api.remove_mid_card(gameName, cardIndex)
+    do
+      GenStateMachine.reply(from, :ok)
+      {:keep_state, %Player.State{ state | field: newField}}
+    else
+      {:error, :not_allowed} ->
+        GenStateMachine.reply(from, {:error, :illegal_move})
+        :keep_state_and_data
+      {:error, :invalid_card} ->
+        GenStateMachine.reply(from, {:error, :illegal_move})
+        :keep_state_and_data
+    end
+  end
+  def bonus_cards({:call, from}, :pass, %Player.State{game: gameName}) do
+    @game_api.player_done(gameName)
+    GenStateMachine.reply(from, :ok)
     :keep_state_and_data
   end
 
-  def handle_event(:cast, {:deal_card, card}, %Player.State{hand: hand} = state) do
+  defp handle_event(:cast, {:deal_card, card}, %Player.State{hand: hand} = state) do
     {:keep_state, %Player.State{state | hand: Hand.add_card(card, hand)}}
   end
-  def handle_event({:call, from}, {:harvest, fieldIndex}, %Player.State{field: field, score: score, game: gameName} = state) do
+  defp handle_event({:call, from}, {:harvest, fieldIndex}, %Player.State{field: field, score: score, game: gameName} = state) do
     case BeanField.harvest_field(field, fieldIndex) do
       {:error, :not_allowed} ->
         GenStateMachine.reply(from, {:error, :illegal_move})
         {:keep_state, state,}
       {newField, {harvestPoints, discard}} ->
-        BeanGame.discard_cards(gameName, discard)
+        @game_api.discard_cards(gameName, discard)
         GenStateMachine.reply(from, :ok)
         {:keep_state, %{state | field: newField, score: score + length(harvestPoints)}}
     end
   end
-  def handle_event({:call, from}, :get_hand, %Player.State{hand: hand} = state) do
+  defp handle_event({:call, from}, :get_hand, %Player.State{hand: hand} = state) do
     {:keep_state, state, [{:reply, from, hand}]}
   end
-  def handle_event({:call, from}, :see_fields, %Player.State{field: field} = state) do
+  defp handle_event({:call, from}, :see_fields, %Player.State{field: field} = state) do
     {:keep_state, state, [{:reply, from, field}]}
   end
-  def handle_event({:call, from}, :purchase_third_field, %Player.State{field: %{3 => :not_available} = field, score: score} = state) when score >= 3 do
+  defp handle_event({:call, from}, :purchase_third_field, %Player.State{field: %{3 => :not_available} = field, score: score} = state) when score >= 3 do
     {:keep_state, %{state| field: BeanField.buy_field(field), score: score - 3}, [{:reply, from, :ok}]}
   end
-  def handle_event({:call, from}, :purchase_third_field, state) do
+  defp handle_event({:call, from}, :purchase_third_field, state) do
     {:keep_state, state, [{:reply, from, {:error, :illegal_move}}]}
   end
-  def handle_event({:call, from}, _, state) do
+  defp handle_event({:call, from}, _, state) do
     {:keep_state, state, [{:reply, from, {:error, :illegal_move}}]}
   end
 

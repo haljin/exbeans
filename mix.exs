@@ -5,9 +5,10 @@ defmodule Exbeans.Mixfile do
     [
       app: :exbeans,
       version: "0.1.0",
-      elixir: "~> 1.5-dev",
+      elixir: "~> 1.4",
       start_permanent: Mix.env == :prod,
-      deps: deps()
+      deps: deps(),
+      config_path: case Mix.env do :test -> "config/test.exs"; _ -> "config/config.exs" end
     ]
   end
 

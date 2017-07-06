@@ -16,7 +16,7 @@ defmodule BeanField do
   def harvest_field(field, index) do
     case field[index] do
       [] -> {field, {[], []}}
-      [bean] -> check_and_maybe_harvest(index, field)
+      [_bean] -> check_and_maybe_harvest(index, field)
       beans when length(beans) > 1 -> harvest(field, index)
     end
   end
