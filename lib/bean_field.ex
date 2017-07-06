@@ -1,9 +1,12 @@
 defmodule BeanField do
   @moduledoc """
-    Implements Bohnanza player's bean fields. Provides various API for planting new beans and harvesting them.
-    """
+  Implements Bohnanza player's bean fields. Provides various API for planting new beans and harvesting them.
+  """
 
+  @typedoc "The player's bean fields."
   @type beanField :: %{}
+  @typedoc "Index of the particular bean field."
+  @type beanFieldIndex :: 1..3
 
   @doc "Creates a new bean field structure"
   @spec new() :: beanField()
@@ -12,7 +15,7 @@ defmodule BeanField do
   end
 
   @doc "Harvests the specified field if it is a legal move. Returns {:error, :not_allowed} otherwise"
-  @spec harvest_field(beanField(), 1..3) ::  {beanField, {[Beans.bean()], [Beans.bean()]}} | {:error, :not_allowed}
+  @spec harvest_field(beanField(), beanFieldIndex) ::  {beanField, {[Beans.bean()], [Beans.bean()]}} | {:error, :not_allowed}
   def harvest_field(field, index) do
     case field[index] do
       [] -> {field, {[], []}}
@@ -22,7 +25,7 @@ defmodule BeanField do
   end
 
   @doc "Plants a bean card at the specified field if it is a legal move. Returns {:error, :not_allowed} otherwise"
-  @spec plant_bean(beanField(), 1..3, Beans.bean()) :: {:ok, beanField()} | {:error, :not_allowed}
+  @spec plant_bean(beanField(), beanFieldIndex, Beans.bean()) :: {:ok, beanField()} | {:error, :not_allowed}
   def plant_bean(field, index, bean) do
     case field[index] do
       [] -> %{field | index => [bean]}

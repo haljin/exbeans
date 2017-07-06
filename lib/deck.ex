@@ -3,6 +3,7 @@ defmodule Deck do
   This modules allows for creation and manipulation of a deck of Bohnanza cards
   """
 
+  @typedoc "A deck of Bohnanza cards."
   @type deck :: list(Beans.bean())
 
   @doc "Creates a new, shuffled deck of Bohnanza cards"

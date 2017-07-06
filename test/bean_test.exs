@@ -1,5 +1,6 @@
 defmodule BeanTest do
   use ExUnit.Case
+  doctest Hand
   @moduledoc false
 
 

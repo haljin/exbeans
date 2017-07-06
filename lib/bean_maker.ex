@@ -1,9 +1,23 @@
 defmodule BeanMaker do
-  @moduledoc false
+  @moduledoc ~S"""
+  Allows defining new bean types.
 
+  `BeanMaker` contains a macro that allows for easy definition of additional bean types.
+  """
+
+  @doc """
+  Define a new bean type given three parameters.
+
+  The name of the new bean, the amount of such beans in the deck
+  and the four levels of the bean-o-meter. The bean will automatically implement the `Beans.Bean` protocol.
+
+  ## Examples
+  `defbean CoffeeBean,    count: 24,  levels: [4, 7, 10, 12]`
+  """
   defmacro defbean(beanType, count: count, levels: [firstLevel, secondLevel, thirdLevel, fourthLevel]) do
     quote do
       defmodule unquote(beanType) do
+        @moduledoc false
         defstruct name: Atom.to_string(unquote(beanType))
       end
 
