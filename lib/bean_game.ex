@@ -16,6 +16,13 @@ defmodule BeanGame do
     GenServer.call(gameName, {:register, player})
   end
 
+  def discard_cards(gameName, cards) do
+    GenServer.cast(gameName, {:discard, cards})
+  end
+
+  def get_mid_cards(gameName) do
+    GenServer.call(gameName, :get_mid_cards)
+  end
 ##  GenServer callbacks
 
   def init([gameName]) do
@@ -34,11 +41,15 @@ defmodule BeanGame do
     playerOrder = Enum.shuffle([player1, player2])
     deckAfterDealing = deal_cards(length(playerOrder) * 5, playerOrder, deck)
     IO.puts "[#{gameName}] Starting game: #{player1} vs. #{player2}. #{hd(playerOrder)} will start!"
-    {:reply, :ok, Map.merge(%BeanGame.State{state | players: playerOrder}, %BeanGame.State{deck: deckAfterDealing})}
+    Player.start_turn(hd(playerOrder))
+    {:reply, :ok, %BeanGame.State{state | players: playerOrder, deck: deckAfterDealing}}
+  end
+  def handle_call(:get_mid_cards, _from, %BeanGame.State{extra_cards: bonus} = state) do
+    {:reply, bonus, state}
   end
 
-  def handle_cast(_msg, state) do
-    {:noreply, state}
+  def handle_cast({:discard, cards}, %BeanGame.State{discard: disc} = state) do
+    {:noreply, %BeanGame.State{state | discard: cards ++ disc}}
   end
 
   defp deal_cards(0, _, deck) do

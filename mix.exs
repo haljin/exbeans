@@ -14,7 +14,7 @@ defmodule Exbeans.Mixfile do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger],
+      extra_applications: [:logger, :gen_state_machine],
       mod: {ExBeans, []}
     ]
   end
@@ -22,7 +22,9 @@ defmodule Exbeans.Mixfile do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:ex_doc, "~> 0.14", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.14", only: :dev, runtime: false},
+      {:mock, "~> 0.2.0", only: :test},
+      {:gen_state_machine, "~> 2.0"}
     ]
   end
 end

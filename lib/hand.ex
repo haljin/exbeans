@@ -16,6 +16,10 @@ defmodule Hand do
     {toPlay, rest}
   end
 
+  def discard_card(hand, index) do
+    List.pop_at(hand, index)
+  end
+
   def see(hand) do
     for card <- hand do IO.puts inspect card end
   end

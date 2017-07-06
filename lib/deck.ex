@@ -14,7 +14,7 @@ defmodule Deck do
   end
 
   @doc "Draw a card from the deck"
-  @spec draw(deck()) :: {Beans.bean(), deck()}
+  @spec draw(deck()) :: {Beans.bean(), deck()} | :empty
   def draw([]) do
     :empty
   end
@@ -39,8 +39,9 @@ defmodule Deck do
   end
 
   defp generate_beans() do
-    allBeans = [%Beans.GreenBean{}, %Beans.CoffeeBean{}, %Beans.BlueBean{}, %Beans.WaxBean{}, %Beans.BlackEyedBean{}]
-    for beanType <- allBeans do for _n <- 1..Beans.Bean.count(beanType) do beanType end end
+    allBeans = [%Beans.CoffeeBean{},  %Beans.WaxBean{},  %Beans.BlueBean{},  %Beans.ChiliBean{},  %Beans.StinkBean{},
+    %Beans.GreenBean{},  %Beans.SoyBean{},  %Beans.BlackEyedBean{},  %Beans.RedBean{}]
+    for beanType <- allBeans do List.duplicate(beanType, Beans.Bean.count(beanType)) end
   end
 
 end
