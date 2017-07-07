@@ -4,8 +4,34 @@ defmodule PlayerTest do
   import StatemTest.Macro
   @moduledoc false
 
-  setup do
-    {:ok, tab: BeanGame.Mock.init()}
+  setup_all do
+    :ets.new(:testGameTable, [:set, :public, :named_table])
+#    :meck.unload()
+    :meck.new(BeanGame)
+    :meck.expect(BeanGame, :register_player, fn (_,_) -> :ok end)
+    :meck.expect(BeanGame, :discard_cards, fn (_,_) -> :ok end)
+    :meck.expect(BeanGame, :get_mid_cards,   fn (gameName) ->
+                                               case :ets.lookup(:testGameTable, gameName) do
+                                                 [] -> []
+                                                 [{^gameName, list}] -> list
+                                               end
+                                             end)
+    :meck.expect(BeanGame, :new_mid_cards, fn (_) -> :ok end)
+    :meck.expect(BeanGame, :get_mid_card,   fn (gameName, index) ->
+                                              [{^gameName, list}] = :ets.lookup(:testGameTable, gameName)
+                                                case Enum.at(list, index) do
+                                                  nil -> {:error, :invalid_card}
+                                                  elem -> {:ok, elem}
+                                                end
+                                            end)
+    :meck.expect(BeanGame, :remove_mid_card,    fn (gameName, index) ->
+                                                  [{^gameName, list}] = :ets.lookup(:testGameTable, gameName)
+                                                  newList = List.delete_at(list, index)
+                                                  :ets.insert(:testGameTable, {gameName, newList})
+                                                  :ok
+                                                end)
+    :meck.expect(BeanGame, :player_done, fn (_) -> :ok end)
+#    {:ok, tab: BeanGame.Mock.init()}
   end
 
   test "Player join game" do
@@ -123,7 +149,7 @@ defmodule PlayerTest do
     :ok = Player.play_card(:midTestPlayer, 1)
     assert_state :bonus_cards, for: :midTestPlayer
 
-    BeanGame.Mock.set_mid_cards(:testGame, [%Beans.GreenBean{}, %Beans.SoyBean{}, %Beans.GreenBean{}])
+    set_mid_cards(:testGame, [%Beans.GreenBean{}, %Beans.SoyBean{}, %Beans.GreenBean{}])
     :ok = Player.play_mid_card(:midTestPlayer, 0, 1)
     IO.puts inspect :ets.lookup(:testGameTable, :testGame)
     :ok = Player.play_mid_card(:midTestPlayer, 1, 1)
@@ -144,7 +170,7 @@ defmodule PlayerTest do
     :ok = Player.play_card(:midTestPlayer2, 1)
     assert_state :bonus_cards, for: :midTestPlayer2
 
-    BeanGame.Mock.set_mid_cards(:testGame, [%Beans.GreenBean{}, %Beans.SoyBean{}, %Beans.GreenBean{}])
+    set_mid_cards(:testGame, [%Beans.GreenBean{}, %Beans.SoyBean{}, %Beans.GreenBean{}])
     :ok = Player.play_mid_card(:midTestPlayer2, 0, 1)
     :ok = Player.pass(:midTestPlayer2)
     Player.end_turn(:midTestPlayer2)
@@ -163,7 +189,7 @@ defmodule PlayerTest do
     :ok = Player.play_card(:midTestPlayer3, 1)
     assert_state :bonus_cards, for: :midTestPlayer3
 
-    BeanGame.Mock.set_mid_cards(:testGame, [%Beans.GreenBean{}, %Beans.SoyBean{}, %Beans.GreenBean{}])
+    set_mid_cards(:testGame, [%Beans.GreenBean{}, %Beans.SoyBean{}, %Beans.GreenBean{}])
     {:error, :illegal_move} = Player.play_mid_card(:midTestPlayer3, 1, 1)
     :ok = Player.pass(:midTestPlayer3)
     Player.end_turn(:midTestPlayer3)
@@ -178,7 +204,7 @@ defmodule PlayerTest do
     Player.deal_card(:initTestPlayer, %Beans.GreenBean{})
     Player.start_turn(:initTestPlayer)
     assert_state :initial_cards, for: :initTestPlayer
-    BeanGame.Mock.set_mid_cards(:testGame, [%Beans.GreenBean{}, %Beans.SoyBean{}])
+    set_mid_cards(:testGame, [%Beans.GreenBean{}, %Beans.SoyBean{}])
     :ok = Player.play_mid_card(:initTestPlayer, 0, 1)
     :ok = Player.play_mid_card(:initTestPlayer, 0, 2)
     Player.skip_mid_cards(:initTestPlayer)
@@ -193,7 +219,7 @@ defmodule PlayerTest do
     Player.deal_card(:initTestPlayer2, %Beans.GreenBean{})
     Player.start_turn(:initTestPlayer2)
     assert_state :initial_cards, for: :initTestPlayer2
-    BeanGame.Mock.set_mid_cards(:testGame, [%Beans.GreenBean{}, %Beans.SoyBean{}])
+    set_mid_cards(:testGame, [%Beans.GreenBean{}, %Beans.SoyBean{}])
     :ok = Player.play_mid_card(:initTestPlayer2, 0, 1)
     {:error, :illegal_move} = Player.play_mid_card(:initTestPlayer2, 0, 1)
     :ok = Player.discard_mid_card(:initTestPlayer2, 0)
@@ -209,7 +235,7 @@ defmodule PlayerTest do
     Player.deal_card(:initTestPlayer3, %Beans.GreenBean{})
     Player.start_turn(:initTestPlayer3)
     assert_state :initial_cards, for: :initTestPlayer3
-    BeanGame.Mock.set_mid_cards(:testGame, [%Beans.GreenBean{}, %Beans.SoyBean{}])
+    set_mid_cards(:testGame, [%Beans.GreenBean{}, %Beans.SoyBean{}])
     :ok = Player.pass(:initTestPlayer3)
     assert_state :play_cards, for: :initTestPlayer3
 
@@ -223,7 +249,7 @@ defmodule PlayerTest do
     Player.deal_card(:scorePlayer, %Beans.WaxBean{})
     Player.start_turn(:scorePlayer)
     assert_state :initial_cards, for: :scorePlayer
-    BeanGame.Mock.set_mid_cards(:testGame, [%Beans.GreenBean{}, %Beans.GreenBean{}, %Beans.GreenBean{}])
+    set_mid_cards(:testGame, [%Beans.GreenBean{}, %Beans.GreenBean{}, %Beans.GreenBean{}])
     :ok = Player.play_mid_card(:scorePlayer, 0, 1)
     :ok = Player.play_mid_card(:scorePlayer, 0, 1)
     :ok = Player.play_mid_card(:scorePlayer, 0, 1)
@@ -231,8 +257,8 @@ defmodule PlayerTest do
     Player.play_card(:scorePlayer, 1)
     Player.harvest(:scorePlayer, 1)
     Player.play_card(:scorePlayer, 1)
-
-    Player.stop(:scorePlayer)
+    :ok = Player.pass(:scorePlayer)
+    1 = Player.end_game(:scorePlayer)
   end
 
   test "Third field" do
@@ -243,7 +269,7 @@ defmodule PlayerTest do
     Player.start_turn(:thirdFieldPlayer)
     {:error, :illegal_move} = Player.purchase_third_field(:thirdFieldPlayer)
 
-    BeanGame.Mock.set_mid_cards(:testGame, [%Beans.RedBean{}, %Beans.RedBean{}, %Beans.RedBean{}])
+    set_mid_cards(:testGame, [%Beans.RedBean{}, %Beans.RedBean{}, %Beans.RedBean{}])
     :ok = Player.play_mid_card(:thirdFieldPlayer, 0, 1)
     :ok = Player.play_mid_card(:thirdFieldPlayer, 0, 1)
     :ok = Player.play_mid_card(:thirdFieldPlayer, 0, 1)
@@ -264,6 +290,9 @@ defmodule PlayerTest do
     Player.deal_card(player, %Beans.GreenBean{})
   end
 
+  defp set_mid_cards(gameName, list) do
+    :ets.insert(:testGameTable, {gameName, list})
+  end
 
 
 end

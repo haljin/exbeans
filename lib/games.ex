@@ -13,7 +13,7 @@ defmodule Games.Supervisor do
 
   def init([]) do
     children = [
-      worker(BeanGame.Game, [], restart: :transient)
+      worker(BeanGame, [], restart: :transient)
     ]
     supervise(children, strategy: :simple_one_for_one)
   end

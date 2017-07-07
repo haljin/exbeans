@@ -1,4 +1,4 @@
 # This file is responsible for configuring your application
 # and its dependencies with the aid of the Mix.Config module.
 use Mix.Config
-     config :exbeans, game_api: BeanGame.Mock
+     config :exbeans, game_api: BeanGame

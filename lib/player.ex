@@ -6,7 +6,7 @@ defmodule Player do
   keeps track of the current player turn phase.
   """
   use GenStateMachine, callback_mode: [:state_functions, :state_enter]
-  @game_api Application.fetch_env!(:exbeans, :game_api)
+#  @game_api Application.fetch_env!(:exbeans, :game_api)
 
   @typedoc "The player's reference."
   @type playerName :: atom()
@@ -31,7 +31,7 @@ defmodule Player do
 
 ## -------------------------------- Upstream API -----------------------------------
   @doc "Join a new game of Bohnanza with the player."
-  @spec join_game(playerName, BeanGame.gameName) :: :ok
+  @spec join_game(playerName, BeanGameName) :: :ok
   def join_game(name, gameName) do
     GenStateMachine.call(name, {:join_game, gameName})
   end
@@ -116,9 +116,15 @@ defmodule Player do
   end
 
   @doc "Notify the player that his turns has ended."
-  @spec end_turn(playerName) :: :ok
+  @spec skip_mid_cards(playerName) :: :ok
   def skip_mid_cards(name) do
     GenStateMachine.cast(name, :skip_mid_cards)
+  end
+
+  @doc "Notify the player that the whole game has ended."
+  @spec end_game(playerName) :: non_neg_integer
+  def end_game(name) do
+    GenStateMachine.call(name, :end_game)
   end
 
 ##  GenServer callbacks
@@ -133,7 +139,7 @@ defmodule Player do
     :keep_state_and_data
   end
   def waiting_to_start({:call, from}, {:join_game, gameName}, %Player.State{name: name} = state) do
-    :ok = @game_api.register_player(gameName, name)
+    :ok = BeanGame.register_player(gameName, name)
     GenStateMachine.reply(from, :ok)
     {:next_state, :no_turn, %Player.State{state | game: gameName}}
   end
@@ -148,6 +154,10 @@ defmodule Player do
   end
   def no_turn({:call, from}, {:harvest, _fieldIndex}, state) do
     {:keep_state, state, [{:reply, from, {:error, :illegal_move}}]}
+  end
+  def no_turn({:call, from}, :end_game, %Player.State{score: score} = state) do
+    GenStateMachine.reply(from, score)
+    {:stop, :normal, state}
   end
   def no_turn(eventType, event, state) do
     handle_event(eventType, event, state)
@@ -165,9 +175,9 @@ defmodule Player do
     {:next_state, :play_cards, state}
   end
   def initial_cards({:call, from}, {:play_mid_card, cardIndex, fieldIndex}, %Player.State{field: field, game: gameName} = state) do
-    with {:ok, card}       <- @game_api.get_mid_card(gameName, cardIndex),
+    with {:ok, card}       <- BeanGame.get_mid_card(gameName, cardIndex),
          %{} = newField    <- BeanField.plant_bean(field, fieldIndex, card),
-         :ok               <- @game_api.remove_mid_card(gameName, cardIndex)
+         :ok               <- BeanGame.remove_mid_card(gameName, cardIndex)
     do
       GenStateMachine.reply(from, :ok)
       {:keep_state, %Player.State{ state | field: newField}}
@@ -181,10 +191,10 @@ defmodule Player do
     end
   end
   def initial_cards({:call, from}, {:discard_mid_card, cardIndex}, %Player.State{game: gameName} = state) do
-    with {:ok, card}       <- @game_api.get_mid_card(gameName, cardIndex),
-         :ok               <- @game_api.remove_mid_card(gameName, cardIndex)
+    with {:ok, card}       <- BeanGame.get_mid_card(gameName, cardIndex),
+         :ok               <- BeanGame.remove_mid_card(gameName, cardIndex)
     do
-      @game_api.discard_cards(gameName, [card])
+      BeanGame.discard_cards(gameName, [card])
       GenStateMachine.reply(from, :ok)
       {:keep_state, state}
     else
@@ -243,7 +253,7 @@ defmodule Player do
   end
   def discard({:call, from}, {:discard, n}, %Player.State{hand: hand, game: gameName} = state) do
     {discarded, newHand} = Hand.discard_card(hand, n + 1)
-    @game_api.discard_cards(gameName, [discarded])
+    BeanGame.discard_cards(gameName, [discarded])
     GenStateMachine.reply(from, :ok)
     {:next_state, :bonus_cards, %Player.State{ state | hand: newHand}}
   end
@@ -257,17 +267,13 @@ defmodule Player do
 
   @doc false
   def bonus_cards(:enter, _, %Player.State{game: gameName}) do
-    @game_api.new_mid_cards(gameName)
+    BeanGame.new_mid_cards(gameName)
     :keep_state_and_data
   end
-  def bonus_cards(:cast, :end_turn, %Player.State{name: player} = state) do
-    IO.puts("[#{player}] Turn ended.")
-    {:next_state, :no_turn, state}
-  end
   def bonus_cards({:call, from}, {:play_mid_card, cardIndex, fieldIndex}, %Player.State{field: field, game: gameName} = state) do
-    with {:ok, card}       <- @game_api.get_mid_card(gameName, cardIndex),
+    with {:ok, card}       <- BeanGame.get_mid_card(gameName, cardIndex),
          %{} = newField    <- BeanField.plant_bean(field, fieldIndex, card),
-         :ok               <- @game_api.remove_mid_card(gameName, cardIndex)
+         :ok               <- BeanGame.remove_mid_card(gameName, cardIndex)
     do
       GenStateMachine.reply(from, :ok)
       {:keep_state, %Player.State{ state | field: newField}}
@@ -280,10 +286,34 @@ defmodule Player do
         :keep_state_and_data
     end
   end
-  def bonus_cards({:call, from}, :pass, %Player.State{game: gameName}) do
-    @game_api.player_done(gameName)
+  def bonus_cards({:call, from}, :pass, %Player.State{game: gameName} = state) do
+    BeanGame.player_done(gameName)
     GenStateMachine.reply(from, :ok)
+    {:next_state, :end_turn, state}
+  end
+  def bonus_cards(:cast, :end_turn, %Player.State{name: player} = state) do
+    IO.puts("[#{player}] Turn ended.")
+    {:next_state, :no_turn, state}
+  end
+  def bonus_cards({:call, from}, :end_game, %Player.State{score: score} = state) do
+    GenStateMachine.reply(from, score)
+    {:stop, :normal, state}
+  end
+  def bonus_cards(eventType, event, state) do
+    handle_event(eventType, event, state)
+  end
+
+  def end_turn(:enter, _, %Player.State{game: gameName}) do
+    BeanGame.new_mid_cards(gameName)
     :keep_state_and_data
+  end
+  def end_turn(:cast, :end_turn, %Player.State{name: player} = state) do
+    IO.puts("[#{player}] Turn ended.")
+    {:next_state, :no_turn, state}
+  end
+  def end_turn({:call, from}, :end_game, %Player.State{score: score} = state) do
+    GenStateMachine.reply(from, score)
+    {:stop, :normal, state}
   end
 
   @doc false
@@ -296,7 +326,7 @@ defmodule Player do
         GenStateMachine.reply(from, {:error, :illegal_move})
         {:keep_state, state,}
       {newField, {harvestPoints, discard}} ->
-        @game_api.discard_cards(gameName, discard)
+        BeanGame.discard_cards(gameName, discard)
         GenStateMachine.reply(from, :ok)
         {:keep_state, %{state | field: newField, score: score + length(harvestPoints)}}
     end
