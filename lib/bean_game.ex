@@ -1,24 +1,19 @@
-defmodule BeanGame do
+defmodule ExBeans.BeanGame do
   @moduledoc false
-  @type gameName :: atom
-#
-#  defmodule Behaviour do
-#    @callback register_player(BeanGameName, Player.playerName) :: :ok
-#    @callback discard_cards(BeanGameName, [Beans.bean]) :: :ok
-#    @callback get_mid_cards(BeanGameName) :: [Beans.bean]
-#    @callback new_mid_cards(BeanGameName) :: :ok
-#    @callback get_mid_card(BeanGameName, integer) :: {:ok, Beans.bean} | {:error, :invalid_card}
-#    @callback remove_mid_card(BeanGameName, integer) :: :ok | {:error, :invalid_card}
-#    @callback player_done(BeanGameName) :: :ok
-#  end
+  @type gameName :: atom | pid
+  
+  alias ExBeans.Player
+  alias ExBeans.Deck
   use GenServer
+
     defmodule State do
       defstruct name: nil, deck: Deck.new(), discard: [], players: nil, extra_cards: [], game_over: false
     end
 
+
 ## API
   def start_link(gameName) do
-    GenServer.start_link(__MODULE__, [gameName], name: gameName)
+    GenServer.start_link(__MODULE__, [gameName])
   end
 
   def register_player(gameName, player) do

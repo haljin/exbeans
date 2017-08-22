@@ -1,6 +1,8 @@
 defmodule BeanFieldTest do
   use ExUnit.Case
   @moduledoc false
+  alias ExBeans.Beans
+  alias ExBeans.BeanField
 
 
   test "Simple planting" do

@@ -1,5 +1,11 @@
 defmodule BeanTest do
   use ExUnit.Case
+  alias ExBeans.Deck
+  alias ExBeans.Hand
+  alias ExBeans.Beans
+  alias ExBeans.BeanField
+
+  
   doctest Hand
   @moduledoc false
 

@@ -1,5 +1,9 @@
 defmodule GameTest do
   use ExUnit.Case
+  alias ExBeans.Deck
+  alias ExBeans.Player  
+  alias ExBeans.Beans
+  alias ExBeans.BeanGame
   @moduledoc false
 
   setup_all do
@@ -30,7 +34,6 @@ defmodule GameTest do
 
   test "GameBoard" do
     {:ok, pid} = BeanGame.start_link(:testGame)
-    ^pid = Process.whereis(:testGame)
     assert Process.alive?(pid)
   end
 
@@ -38,9 +41,9 @@ defmodule GameTest do
     Process.register(self(), :testProc)
     initial_cards()
 
-    {:ok, _pid} = BeanGame.start_link(:testGame)
-    :ok = BeanGame.register_player(:testGame, :testProc)
-    :ok = BeanGame.register_player(:testGame, :testProc)
+    {:ok, pid} = BeanGame.start_link(:testGame)
+    :ok = BeanGame.register_player(pid, :testProc)
+    :ok = BeanGame.register_player(pid, :testProc)
     assert_receive :start_turn
     assert_receive :skip_mid_cards
   end
@@ -49,50 +52,50 @@ defmodule GameTest do
     Process.register(self(), :testProc)
     initial_cards()
 
-    {:ok, _pid} = BeanGame.start_link(:testGame)
-    :ok = BeanGame.register_player(:testGame, :testProc)
-    :ok = BeanGame.register_player(:testGame, :testProc)
+    {:ok, pid} = BeanGame.start_link(:testGame)
+    :ok = BeanGame.register_player(pid, :testProc)
+    :ok = BeanGame.register_player(pid, :testProc)
     set_deck([%Beans.CoffeeBean{}, %Beans.WaxBean{}, %Beans.SoyBean{}])
 
-    BeanGame.new_mid_cards(:testGame)
-    [%Beans.CoffeeBean{}, %Beans.WaxBean{}, %Beans.SoyBean{}] = BeanGame.get_mid_cards(:testGame)
+    BeanGame.new_mid_cards(pid)
+    [%Beans.CoffeeBean{}, %Beans.WaxBean{}, %Beans.SoyBean{}] = BeanGame.get_mid_cards(pid)
 
-    {:ok, %Beans.SoyBean{}} = BeanGame.get_mid_card(:testGame, 2)
-    :ok = BeanGame.remove_mid_card(:testGame, 2)
-    {:error, :invalid_card}= BeanGame.get_mid_card(:testGame, 2)
+    {:ok, %Beans.SoyBean{}} = BeanGame.get_mid_card(pid, 2)
+    :ok = BeanGame.remove_mid_card(pid, 2)
+    {:error, :invalid_card}= BeanGame.get_mid_card(pid, 2)
   end
 
   test "Discard in mid cards" do
     Process.register(self(), :testProc)
     initial_cards()
 
-    {:ok, _pid} = BeanGame.start_link(:testGame)
-    :ok = BeanGame.register_player(:testGame, :testProc)
-    :ok = BeanGame.register_player(:testGame, :testProc)
+    {:ok, pid} = BeanGame.start_link(:testGame)
+    :ok = BeanGame.register_player(pid, :testProc)
+    :ok = BeanGame.register_player(pid, :testProc)
     set_deck([%Beans.CoffeeBean{}, %Beans.WaxBean{}, %Beans.SoyBean{}])
 
-    BeanGame.discard_cards(:testGame, [%Beans.WaxBean{}])
-    BeanGame.new_mid_cards(:testGame)
-    [%Beans.WaxBean{}, %Beans.CoffeeBean{}, %Beans.WaxBean{}, %Beans.SoyBean{}] = BeanGame.get_mid_cards(:testGame)
+    BeanGame.discard_cards(pid, [%Beans.WaxBean{}])
+    BeanGame.new_mid_cards(pid)
+    [%Beans.WaxBean{}, %Beans.CoffeeBean{}, %Beans.WaxBean{}, %Beans.SoyBean{}] = BeanGame.get_mid_cards(pid)
 
-    {:ok, %Beans.SoyBean{}} = BeanGame.get_mid_card(:testGame, 3)
-    :ok = BeanGame.remove_mid_card(:testGame, 3)
-    {:ok, %Beans.WaxBean{}} = BeanGame.get_mid_card(:testGame, 2)
+    {:ok, %Beans.SoyBean{}} = BeanGame.get_mid_card(pid, 3)
+    :ok = BeanGame.remove_mid_card(pid, 3)
+    {:ok, %Beans.WaxBean{}} = BeanGame.get_mid_card(pid, 2)
   end
 
   test "Player turn end and initial cards" do
     Process.register(self(), :testProc)
     initial_cards()
 
-    {:ok, _pid} = BeanGame.start_link(:testGame)
-    :ok = BeanGame.register_player(:testGame, :testProc)
-    :ok = BeanGame.register_player(:testGame, :testProc)
+    {:ok, pid} = BeanGame.start_link(:testGame)
+    :ok = BeanGame.register_player(pid, :testProc)
+    :ok = BeanGame.register_player(pid, :testProc)
     assert_receive :start_turn
     assert_receive :skip_mid_cards
     set_deck([%Beans.CoffeeBean{}, %Beans.WaxBean{}, %Beans.SoyBean{}, %Beans.RedBean{}, %Beans.RedBean{}, %Beans.RedBean{}])
 
-    BeanGame.new_mid_cards(:testGame)
-    BeanGame.player_done(:testGame)
+    BeanGame.new_mid_cards(pid)
+    BeanGame.player_done(pid)
     assert_receive :end_turn
     assert_receive :start_turn
     refute_receive :skip_mid_cards
@@ -102,18 +105,18 @@ defmodule GameTest do
     Process.register(self(), :testProc)
     initial_cards()
 
-    {:ok, _pid} = BeanGame.start_link(:testGame)
-    :ok = BeanGame.register_player(:testGame, :testProc)
-    :ok = BeanGame.register_player(:testGame, :testProc)
+    {:ok, pid} = BeanGame.start_link(:testGame)
+    :ok = BeanGame.register_player(pid, :testProc)
+    :ok = BeanGame.register_player(pid, :testProc)
     assert_receive :start_turn
     assert_receive :skip_mid_cards
     set_deck([%Beans.CoffeeBean{}, %Beans.WaxBean{}, %Beans.SoyBean{}, %Beans.RedBean{}, %Beans.RedBean{}, %Beans.RedBean{}])
 
-    BeanGame.new_mid_cards(:testGame)
-    :ok = BeanGame.remove_mid_card(:testGame, 0)
-    :ok = BeanGame.remove_mid_card(:testGame, 0)
-    :ok = BeanGame.remove_mid_card(:testGame, 0)
-    BeanGame.player_done(:testGame)
+    BeanGame.new_mid_cards(pid)
+    :ok = BeanGame.remove_mid_card(pid, 0)
+    :ok = BeanGame.remove_mid_card(pid, 0)
+    :ok = BeanGame.remove_mid_card(pid, 0)
+    BeanGame.player_done(pid)
     assert_receive :end_turn
     assert_receive :start_turn
     assert_receive :skip_mid_cards
@@ -123,15 +126,15 @@ defmodule GameTest do
     Process.register(self(), :testProc)
     initial_cards()
 
-    {:ok, _pid} = BeanGame.start_link(:testGame)
-    :ok = BeanGame.register_player(:testGame, :testProc)
-    :ok = BeanGame.register_player(:testGame, :testProc)
+    {:ok, pid} = BeanGame.start_link(:testGame)
+    :ok = BeanGame.register_player(pid, :testProc)
+    :ok = BeanGame.register_player(pid, :testProc)
     assert_receive :start_turn
     assert_receive :skip_mid_cards
     set_deck([%Beans.CoffeeBean{}, %Beans.WaxBean{}])
 
-    BeanGame.new_mid_cards(:testGame)
-    BeanGame.player_done(:testGame)
+    BeanGame.new_mid_cards(pid)
+    BeanGame.player_done(pid)
     assert_receive :end_game
     assert_receive :end_game
   end

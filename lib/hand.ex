@@ -1,4 +1,4 @@
-defmodule Hand do
+defmodule ExBeans.Hand do
   @moduledoc """
   This data structure represents the cards held by a player in the game of Bohnanza
 
@@ -21,7 +21,7 @@ defmodule Hand do
   """
 
   @typedoc "The cards held in a player's hand"
-  @type hand :: list(Beans.bean())
+  @type hand :: list(ExBeans.Beans.bean())
 
   @doc "Create a new empty hand of Bohnanza cards."
   @spec new() :: hand

@@ -1,4 +1,7 @@
-defmodule Beans do
+defmodule ExBeans.Beans do
+  alias ExBeans.BeanMaker
+  alias ExBeans.Beans
+
   require BeanMaker
   import BeanMaker
   @moduledoc false

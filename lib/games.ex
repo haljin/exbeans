@@ -1,4 +1,4 @@
-defmodule Games.Supervisor do
+defmodule ExBeans.Games.Supervisor do
   @moduledoc false
   
   use Supervisor
@@ -7,13 +7,14 @@ defmodule Games.Supervisor do
     Supervisor.start_link(__MODULE__, [], name: __MODULE__)
   end
 
-  def start_game(name) do
-    Supervisor.start_child(__MODULE__, [name])
+  def start_game(name, player1Name, player2Name) do
+    Supervisor.start_child(__MODULE__, [name, player1Name, player2Name])
   end
+
 
   def init([]) do
     children = [
-      worker(BeanGame, [], restart: :transient)
+      supervisor(ExBeans.Game.Supervisor, [], restart: :temporary)
     ]
     supervise(children, strategy: :simple_one_for_one)
   end

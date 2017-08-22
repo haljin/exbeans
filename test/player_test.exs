@@ -2,6 +2,11 @@ defmodule PlayerTest do
   use ExUnit.Case
   require StatemTest.Macro
   import StatemTest.Macro
+  
+  alias ExBeans.Player
+  alias ExBeans.Beans
+  alias ExBeans.BeanGame
+
   @moduledoc false
 
   setup_all do
@@ -35,251 +40,251 @@ defmodule PlayerTest do
   end
 
   test "Player join game" do
-    {:ok, _player1} = Player.start_link(:testPlayer)
-    assert_state :waiting_to_start, for: :testPlayer
-    :ok = Player.join_game(:testPlayer, :testGame)
-    assert_state :no_turn, for: :testPlayer
-    Player.stop(:testPlayer)
+    {:ok, player1} = Player.start_link(:testPlayer)
+    assert_state :waiting_to_start, for: player1
+    :ok = Player.join_game(player1, :testGame)
+    assert_state :no_turn, for: player1
+    Player.stop(player1)
   end
 
   test "Player playing cards"  do
-    {:ok, _player1} = Player.start_link(:testPlayer)
-    :ok = Player.join_game(:testPlayer, :testGame)
-    create_hand(:testPlayer)
-    assert_state :no_turn, for: :testPlayer
+    {:ok, player1} = Player.start_link(:testPlayer)
+    :ok = Player.join_game(player1, :testGame)
+    create_hand(player1)
+    assert_state :no_turn, for: player1
 
-    {:error, :illegal_move} = Player.play_card(:testPlayer, 1)
-    Player.start_turn(:testPlayer)
-    Player.skip_mid_cards(:testPlayer)
-    assert_state :play_cards, for: :testPlayer
-    :ok = Player.play_card(:testPlayer, 1)
-    assert_state :play_cards, for: :testPlayer
-    :ok = Player.play_card(:testPlayer, 2)
-    assert_state :discard, for: :testPlayer
-    {:error, :illegal_move} = Player.play_card(:testPlayer, 1)
+    {:error, :illegal_move} = Player.play_card(player1, 1)
+    Player.start_turn(player1)
+    Player.skip_mid_cards(player1)
+    assert_state :play_cards, for: player1
+    :ok = Player.play_card(player1, 1)
+    assert_state :play_cards, for: player1
+    :ok = Player.play_card(player1, 2)
+    assert_state :discard, for: player1
+    {:error, :illegal_move} = Player.play_card(player1, 1)
 
-    Player.stop(:testPlayer)
+    Player.stop(player1)
   end
 
   test "Passing on playing cards" do
-    {:ok, _player1} = Player.start_link(:testPlayer)
-    :ok = Player.join_game(:testPlayer, :testGame)
-    create_hand(:testPlayer)
+    {:ok, player1} = Player.start_link(:testPlayer)
+    :ok = Player.join_game(player1, :testGame)
+    create_hand(player1)
 
-    Player.start_turn(:testPlayer)
-    Player.skip_mid_cards(:testPlayer)
-    assert_state :play_cards, for: :testPlayer
-    {:error, :illegal_move} = Player.pass(:testPlayer)
-    :ok = Player.play_card(:testPlayer, 1)
-    assert_state :play_cards, for: :testPlayer
-    :ok = Player.pass(:testPlayer)
-    assert_state :discard, for: :testPlayer
-    {:error, :illegal_move} = Player.play_card(:testPlayer, 1)
+    Player.start_turn(player1)
+    Player.skip_mid_cards(player1)
+    assert_state :play_cards, for: player1
+    {:error, :illegal_move} = Player.pass(player1)
+    :ok = Player.play_card(player1, 1)
+    assert_state :play_cards, for: player1
+    :ok = Player.pass(player1)
+    assert_state :discard, for: player1
+    {:error, :illegal_move} = Player.play_card(player1, 1)
 
-    Player.stop(:testPlayer)
+    Player.stop(player1)
   end
 
   test "Discarding" do
-    {:ok, _player1} = Player.start_link(:testPlayer)
-    :ok = Player.join_game(:testPlayer, :testGame)
-    create_hand(:testPlayer)
+    {:ok, player1} = Player.start_link(:testPlayer)
+    :ok = Player.join_game(player1, :testGame)
+    create_hand(player1)
 
-    Player.start_turn(:testPlayer)
-    Player.skip_mid_cards(:testPlayer)
-    assert_state :play_cards, for: :testPlayer
-    :ok = Player.play_card(:testPlayer, 1)
-    :ok = Player.play_card(:testPlayer, 2)
-    assert_state :discard, for: :testPlayer
-    :ok = Player.discard_card(:testPlayer, 1)
-    assert_state :bonus_cards, for: :testPlayer
+    Player.start_turn(player1)
+    Player.skip_mid_cards(player1)
+    assert_state :play_cards, for: player1
+    :ok = Player.play_card(player1, 1)
+    :ok = Player.play_card(player1, 2)
+    assert_state :discard, for: player1
+    :ok = Player.discard_card(player1, 1)
+    assert_state :bonus_cards, for: player1
 
-    Player.stop(:testPlayer)
+    Player.stop(player1)
   end
 
   test "Pass discarding" do
-    {:ok, _player1} = Player.start_link(:testPlayer)
-    :ok = Player.join_game(:testPlayer, :testGame)
-    create_hand(:testPlayer)
+    {:ok, player1} = Player.start_link(:testPlayer)
+    :ok = Player.join_game(player1, :testGame)
+    create_hand(player1)
 
-    Player.start_turn(:testPlayer)
-    Player.skip_mid_cards(:testPlayer)
-    assert_state :play_cards, for: :testPlayer
-    :ok = Player.play_card(:testPlayer, 1)
-    :ok = Player.play_card(:testPlayer, 2)
-    assert_state :discard, for: :testPlayer
-    :ok = Player.pass(:testPlayer)
-    assert_state :bonus_cards, for: :testPlayer
+    Player.start_turn(player1)
+    Player.skip_mid_cards(player1)
+    assert_state :play_cards, for: player1
+    :ok = Player.play_card(player1, 1)
+    :ok = Player.play_card(player1, 2)
+    assert_state :discard, for: player1
+    :ok = Player.pass(player1)
+    assert_state :bonus_cards, for: player1
 
-    Player.stop(:testPlayer)
+    Player.stop(player1)
   end
 
   test "No cards in hand" do
-    {:ok, _player1} = Player.start_link(:testPlayer)
-    :ok = Player.join_game(:testPlayer, :testGame)
+    {:ok, player1} = Player.start_link(:testPlayer)
+    :ok = Player.join_game(player1, :testGame)
 
-    Player.start_turn(:testPlayer)
-    Player.skip_mid_cards(:testPlayer)
-    assert_state :bonus_cards, for: :testPlayer
+    Player.start_turn(player1)
+    Player.skip_mid_cards(player1)
+    assert_state :bonus_cards, for: player1
 
-    Player.stop(:testPlayer)
+    Player.stop(player1)
   end
 
   test "Play the only card" do
-    {:ok, _player1} = Player.start_link(:testPlayer)
-    :ok = Player.join_game(:testPlayer, :testGame)
-    Player.deal_card(:testPlayer, %Beans.GreenBean{})
+    {:ok, player1} = Player.start_link(:testPlayer)
+    :ok = Player.join_game(player1, :testGame)
+    Player.deal_card(player1, %Beans.GreenBean{})
 
-    Player.start_turn(:testPlayer)
-    Player.skip_mid_cards(:testPlayer)
-    assert_state :play_cards, for: :testPlayer
-    :ok = Player.play_card(:testPlayer, 1)
-    assert_state :bonus_cards, for: :testPlayer
+    Player.start_turn(player1)
+    Player.skip_mid_cards(player1)
+    assert_state :play_cards, for: player1
+    :ok = Player.play_card(player1, 1)
+    assert_state :bonus_cards, for: player1
 
-    Player.stop(:testPlayer)
+    Player.stop(player1)
   end
 
   test "Pick mid cards" do
-    {:ok, _player1} = Player.start_link(:midTestPlayer)
-    :ok = Player.join_game(:midTestPlayer, :testGame)
-    Player.deal_card(:midTestPlayer, %Beans.GreenBean{})
+    {:ok, player1} = Player.start_link(:midTestPlayer)
+    :ok = Player.join_game(player1, :testGame)
+    Player.deal_card(player1, %Beans.GreenBean{})
 
-    Player.start_turn(:midTestPlayer)
-    Player.skip_mid_cards(:midTestPlayer)
-    assert_state :play_cards, for: :midTestPlayer
-    :ok = Player.play_card(:midTestPlayer, 1)
-    assert_state :bonus_cards, for: :midTestPlayer
+    Player.start_turn(player1)
+    Player.skip_mid_cards(player1)
+    assert_state :play_cards, for: player1
+    :ok = Player.play_card(player1, 1)
+    assert_state :bonus_cards, for: player1
 
     set_mid_cards(:testGame, [%Beans.GreenBean{}, %Beans.SoyBean{}, %Beans.GreenBean{}])
-    :ok = Player.play_mid_card(:midTestPlayer, 0, 1)
+    :ok = Player.play_mid_card(player1, 0, 1)
     IO.puts inspect :ets.lookup(:testGameTable, :testGame)
-    :ok = Player.play_mid_card(:midTestPlayer, 1, 1)
-    :ok = Player.play_mid_card(:midTestPlayer, 0, 2)
-    Player.end_turn(:midTestPlayer)
-    assert_state :no_turn, for: :midTestPlayer
+    :ok = Player.play_mid_card(player1, 1, 1)
+    :ok = Player.play_mid_card(player1, 0, 2)
+    Player.end_turn(player1)
+    assert_state :no_turn, for: player1
 
-    Player.stop(:midTestPlayer)
+    Player.stop(player1)
   end
 
   test "Pick some mid cards" do
-    {:ok, _player1} = Player.start_link(:midTestPlayer2)
-    :ok = Player.join_game(:midTestPlayer2, :testGame)
-    Player.deal_card(:midTestPlayer2, %Beans.GreenBean{})
-    Player.start_turn(:midTestPlayer2)
-    Player.skip_mid_cards(:midTestPlayer2)
-    assert_state :play_cards, for: :midTestPlayer2
-    :ok = Player.play_card(:midTestPlayer2, 1)
-    assert_state :bonus_cards, for: :midTestPlayer2
+    {:ok, player1} = Player.start_link(:midTestPlayer2)
+    :ok = Player.join_game(player1, :testGame)
+    Player.deal_card(player1, %Beans.GreenBean{})
+    Player.start_turn(player1)
+    Player.skip_mid_cards(player1)
+    assert_state :play_cards, for: player1
+    :ok = Player.play_card(player1, 1)
+    assert_state :bonus_cards, for: player1
 
     set_mid_cards(:testGame, [%Beans.GreenBean{}, %Beans.SoyBean{}, %Beans.GreenBean{}])
-    :ok = Player.play_mid_card(:midTestPlayer2, 0, 1)
-    :ok = Player.pass(:midTestPlayer2)
-    Player.end_turn(:midTestPlayer2)
-    assert_state :no_turn, for: :midTestPlayer2
+    :ok = Player.play_mid_card(player1, 0, 1)
+    :ok = Player.pass(player1)
+    Player.end_turn(player1)
+    assert_state :no_turn, for: player1
 
-    Player.stop(:midTestPlayer2)
+    Player.stop(player1)
   end
 
   test "Take illegal card" do
-    {:ok, _player1} = Player.start_link(:midTestPlayer3)
-    :ok = Player.join_game(:midTestPlayer3, :testGame)
-    Player.deal_card(:midTestPlayer3, %Beans.GreenBean{})
-    Player.start_turn(:midTestPlayer3)
-    Player.skip_mid_cards(:midTestPlayer3)
-    assert_state :play_cards, for: :midTestPlayer3
-    :ok = Player.play_card(:midTestPlayer3, 1)
-    assert_state :bonus_cards, for: :midTestPlayer3
+    {:ok, player1} = Player.start_link(:midTestPlayer3)
+    :ok = Player.join_game(player1, :testGame)
+    Player.deal_card(player1, %Beans.GreenBean{})
+    Player.start_turn(player1)
+    Player.skip_mid_cards(player1)
+    assert_state :play_cards, for: player1
+    :ok = Player.play_card(player1, 1)
+    assert_state :bonus_cards, for: player1
 
     set_mid_cards(:testGame, [%Beans.GreenBean{}, %Beans.SoyBean{}, %Beans.GreenBean{}])
-    {:error, :illegal_move} = Player.play_mid_card(:midTestPlayer3, 1, 1)
-    :ok = Player.pass(:midTestPlayer3)
-    Player.end_turn(:midTestPlayer3)
-    assert_state :no_turn, for: :midTestPlayer3
+    {:error, :illegal_move} = Player.play_mid_card(player1, 1, 1)
+    :ok = Player.pass(player1)
+    Player.end_turn(player1)
+    assert_state :no_turn, for: player1
 
-    Player.stop(:midTestPlayer3)
+    Player.stop(player1)
   end
 
   test "Initial cards" do
-    {:ok, _player1} = Player.start_link(:initTestPlayer)
-    :ok = Player.join_game(:initTestPlayer, :testGame)
-    Player.deal_card(:initTestPlayer, %Beans.GreenBean{})
-    Player.start_turn(:initTestPlayer)
-    assert_state :initial_cards, for: :initTestPlayer
+    {:ok, player1} = Player.start_link(:initTestPlayer)
+    :ok = Player.join_game(player1, :testGame)
+    Player.deal_card(player1, %Beans.GreenBean{})
+    Player.start_turn(player1)
+    assert_state :initial_cards, for: player1
     set_mid_cards(:testGame, [%Beans.GreenBean{}, %Beans.SoyBean{}])
-    :ok = Player.play_mid_card(:initTestPlayer, 0, 1)
-    :ok = Player.play_mid_card(:initTestPlayer, 0, 2)
-    Player.skip_mid_cards(:initTestPlayer)
-    assert_state :play_cards, for: :initTestPlayer
+    :ok = Player.play_mid_card(player1, 0, 1)
+    :ok = Player.play_mid_card(player1, 0, 2)
+    Player.skip_mid_cards(player1)
+    assert_state :play_cards, for: player1
 
-    Player.stop(:initTestPlayer)
+    Player.stop(player1)
   end
 
   test "Discard an initial card" do
-    {:ok, _player1} = Player.start_link(:initTestPlayer2)
-    :ok = Player.join_game(:initTestPlayer2, :testGame)
-    Player.deal_card(:initTestPlayer2, %Beans.GreenBean{})
-    Player.start_turn(:initTestPlayer2)
-    assert_state :initial_cards, for: :initTestPlayer2
+    {:ok, player1} = Player.start_link(:initTestPlayer2)
+    :ok = Player.join_game(player1, :testGame)
+    Player.deal_card(player1, %Beans.GreenBean{})
+    Player.start_turn(player1)
+    assert_state :initial_cards, for: player1
     set_mid_cards(:testGame, [%Beans.GreenBean{}, %Beans.SoyBean{}])
-    :ok = Player.play_mid_card(:initTestPlayer2, 0, 1)
-    {:error, :illegal_move} = Player.play_mid_card(:initTestPlayer2, 0, 1)
-    :ok = Player.discard_mid_card(:initTestPlayer2, 0)
-    Player.skip_mid_cards(:initTestPlayer2)
-    assert_state :play_cards, for: :initTestPlayer2
+    :ok = Player.play_mid_card(player1, 0, 1)
+    {:error, :illegal_move} = Player.play_mid_card(player1, 0, 1)
+    :ok = Player.discard_mid_card(player1, 0)
+    Player.skip_mid_cards(player1)
+    assert_state :play_cards, for: player1
 
-    Player.stop(:initTestPlayer2)
+    Player.stop(player1)
   end
 
   test "Skip initial cards" do
-    {:ok, _player1} = Player.start_link(:initTestPlayer3)
-    :ok = Player.join_game(:initTestPlayer3, :testGame)
-    Player.deal_card(:initTestPlayer3, %Beans.GreenBean{})
-    Player.start_turn(:initTestPlayer3)
-    assert_state :initial_cards, for: :initTestPlayer3
+    {:ok, player1} = Player.start_link(:initTestPlayer3)
+    :ok = Player.join_game(player1, :testGame)
+    Player.deal_card(player1, %Beans.GreenBean{})
+    Player.start_turn(player1)
+    assert_state :initial_cards, for: player1
     set_mid_cards(:testGame, [%Beans.GreenBean{}, %Beans.SoyBean{}])
-    :ok = Player.pass(:initTestPlayer3)
-    assert_state :play_cards, for: :initTestPlayer3
+    :ok = Player.pass(player1)
+    assert_state :play_cards, for: player1
 
-    Player.stop(:initTestPlayer3)
+    Player.stop(player1)
   end
 
   test "Scoring" do
-    {:ok, _player1} = Player.start_link(:scorePlayer)
-    :ok = Player.join_game(:scorePlayer, :testGame)
-    Player.deal_card(:scorePlayer, %Beans.GreenBean{})
-    Player.deal_card(:scorePlayer, %Beans.WaxBean{})
-    Player.start_turn(:scorePlayer)
-    assert_state :initial_cards, for: :scorePlayer
+    {:ok, player1} = Player.start_link(:scorePlayer)
+    :ok = Player.join_game(player1, :testGame)
+    Player.deal_card(player1, %Beans.GreenBean{})
+    Player.deal_card(player1, %Beans.WaxBean{})
+    Player.start_turn(player1)
+    assert_state :initial_cards, for: player1
     set_mid_cards(:testGame, [%Beans.GreenBean{}, %Beans.GreenBean{}, %Beans.GreenBean{}])
-    :ok = Player.play_mid_card(:scorePlayer, 0, 1)
-    :ok = Player.play_mid_card(:scorePlayer, 0, 1)
-    :ok = Player.play_mid_card(:scorePlayer, 0, 1)
-    Player.skip_mid_cards(:scorePlayer)
-    Player.play_card(:scorePlayer, 1)
-    Player.harvest(:scorePlayer, 1)
-    Player.play_card(:scorePlayer, 1)
-    :ok = Player.pass(:scorePlayer)
-    1 = Player.end_game(:scorePlayer)
+    :ok = Player.play_mid_card(player1, 0, 1)
+    :ok = Player.play_mid_card(player1, 0, 1)
+    :ok = Player.play_mid_card(player1, 0, 1)
+    Player.skip_mid_cards(player1)
+    Player.play_card(player1, 1)
+    Player.harvest(player1, 1)
+    Player.play_card(player1, 1)
+    :ok = Player.pass(player1)
+    1 = Player.end_game(player1)
   end
 
   test "Third field" do
-    {:ok, _player1} = Player.start_link(:thirdFieldPlayer)
-    :ok = Player.join_game(:thirdFieldPlayer, :testGame)
-    Player.deal_card(:thirdFieldPlayer, %Beans.RedBean{})
-    Player.deal_card(:thirdFieldPlayer, %Beans.WaxBean{})
-    Player.start_turn(:thirdFieldPlayer)
-    {:error, :illegal_move} = Player.purchase_third_field(:thirdFieldPlayer)
+    {:ok, player1} = Player.start_link(:thirdFieldPlayer)
+    :ok = Player.join_game(player1, :testGame)
+    Player.deal_card(player1, %Beans.RedBean{})
+    Player.deal_card(player1, %Beans.WaxBean{})
+    Player.start_turn(player1)
+    {:error, :illegal_move} = Player.purchase_third_field(player1)
 
     set_mid_cards(:testGame, [%Beans.RedBean{}, %Beans.RedBean{}, %Beans.RedBean{}])
-    :ok = Player.play_mid_card(:thirdFieldPlayer, 0, 1)
-    :ok = Player.play_mid_card(:thirdFieldPlayer, 0, 1)
-    :ok = Player.play_mid_card(:thirdFieldPlayer, 0, 1)
-    Player.skip_mid_cards(:thirdFieldPlayer)
-    Player.play_card(:thirdFieldPlayer, 1)
-    Player.harvest(:thirdFieldPlayer, 1)
-    :ok = Player.purchase_third_field(:thirdFieldPlayer)
-    :ok = Player.play_card(:thirdFieldPlayer, 3)
+    :ok = Player.play_mid_card(player1, 0, 1)
+    :ok = Player.play_mid_card(player1, 0, 1)
+    :ok = Player.play_mid_card(player1, 0, 1)
+    Player.skip_mid_cards(player1)
+    Player.play_card(player1, 1)
+    Player.harvest(player1, 1)
+    :ok = Player.purchase_third_field(player1)
+    :ok = Player.play_card(player1, 3)
 
-    Player.stop(:thirdFieldPlayer)
+    Player.stop(player1)
   end
 
   defp create_hand(player) do

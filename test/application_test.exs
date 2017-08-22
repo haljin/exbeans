@@ -1,21 +1,16 @@
 defmodule ApplicationTest do
   use ExUnit.Case
+  alias ExBeans.Games
   @moduledoc false
 
  test "Supervision test" do
-   {:ok, pid} = Games.Supervisor.start_game(:testGame)
-   ^pid = Process.whereis(:testGame)
-   {:ok, anotherpid} = Games.Supervisor.start_game(:otherGame)
-   ^anotherpid = Process.whereis(:otherGame)
+   {:ok, pid} = Games.Supervisor.start_game(:testGame, :testPlayer, :testPlayer2)
+   {:ok, _anotherpid} = Games.Supervisor.start_game(:otherGame, :player1, :player2)
 
-   {:error, {:already_started, ^pid}} = Games.Supervisor.start_game(:testGame)
-
-   Process.exit(pid, :some_error)
-
+   Process.exit(pid, :kill)
    :timer.sleep(10)
 
-   assert is_pid(Process.whereis(:testGame))
-   assert Process.whereis(:testGame) != pid
+   refute Process.alive?(pid)
    cleanup()
  end
 

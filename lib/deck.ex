@@ -1,8 +1,8 @@
-defmodule Deck do
+defmodule ExBeans.Deck do
   @moduledoc """
   This modules allows for creation and manipulation of a deck of Bohnanza cards
   """
-
+  alias ExBeans.Beans
   @typedoc "A deck of Bohnanza cards."
   @type deck :: list(Beans.bean())
 

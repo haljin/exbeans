@@ -1,4 +1,4 @@
-defmodule BeanMaker do
+defmodule ExBeans.BeanMaker do
   @moduledoc ~S"""
   Allows defining new bean types.
 
@@ -21,7 +21,7 @@ defmodule BeanMaker do
         defstruct name: Atom.to_string(unquote(beanType))
       end
 
-      defimpl Beans.Bean, for: unquote(beanType) do
+      defimpl ExBeans.Beans.Bean, for: unquote(beanType) do
         def harvest(_bean, beans) do
           cond do
             length(beans) >= unquote fourthLevel -> Enum.split(beans, 4)

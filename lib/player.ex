@@ -1,4 +1,4 @@
-defmodule Player do
+defmodule ExBeans.Player do
   @moduledoc """
   This module implements the player functionality in a game of Bohnanza.
 
@@ -6,10 +6,14 @@ defmodule Player do
   keeps track of the current player turn phase.
   """
   use GenStateMachine, callback_mode: [:state_functions, :state_enter]
+  alias ExBeans.Hand
+  alias ExBeans.BeanField
+  alias ExBeans.Player
+  alias ExBeans.BeanGame
 #  @game_api Application.fetch_env!(:exbeans, :game_api)
 
   @typedoc "The player's reference."
-  @type playerName :: atom()
+  @type playerName :: atom() | pid()
 
   defmodule State do
     @moduledoc false
@@ -20,7 +24,7 @@ defmodule Player do
   @doc "Start the player server."
   @spec start_link(playerName) :: {:ok, pid}
   def start_link(name) do
-    GenStateMachine.start_link( __MODULE__, [name], name: name)
+    GenStateMachine.start_link( __MODULE__, [name])
   end
 
   @doc "Stop the player server."

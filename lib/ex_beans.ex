@@ -4,6 +4,6 @@ defmodule ExBeans do
   use Application
 
   def start(_type, _args) do
-    ExBeansSup.Supervisor.start_link()
+    ExBeans.ExBeansSup.Supervisor.start_link()
   end
 end

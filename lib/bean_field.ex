@@ -1,7 +1,8 @@
-defmodule BeanField do
+defmodule ExBeans.BeanField do
   @moduledoc """
   Implements Bohnanza player's bean fields. Provides various API for planting new beans and harvesting them.
   """
+  alias ExBeans.Beans
 
   @typedoc "The player's bean fields."
   @type beanField :: %{}

@@ -1,4 +1,4 @@
-defmodule ExBeansSup.Supervisor do
+defmodule ExBeans.ExBeansSup.Supervisor do
   @moduledoc false
   
   use Supervisor
@@ -9,8 +9,7 @@ defmodule ExBeansSup.Supervisor do
 
   def init([]) do
     children = [
-      supervisor(Games.Supervisor, [], restart: :permanent),
-      supervisor(Players.Supervisor, [], restart: :permanent)
+      supervisor(ExBeans.Games.Supervisor, [], restart: :permanent)
     ]
 
     supervise(children, strategy: :one_for_all)
