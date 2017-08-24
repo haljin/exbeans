@@ -8,7 +8,9 @@ defmodule ExBeans.Games.Supervisor do
   end
 
   def start_game(name, player1Name, player2Name) do
-    Supervisor.start_child(__MODULE__, [name, player1Name, player2Name])
+    {:ok, pid} = Supervisor.start_child(__MODULE__, [name, player1Name, player2Name])
+    children = Supervisor.which_children(pid)
+    [game: get_child_pid(ExBeans.BeanGame, children), player1: get_child_pid(:player1, children), player2: get_child_pid(:player2, children)]
   end
 
 
@@ -18,4 +20,11 @@ defmodule ExBeans.Games.Supervisor do
     ]
     supervise(children, strategy: :simple_one_for_one)
   end
+  
+  defp get_child_pid(childName, children) do
+    {_, pid, _, _} = List.keyfind(children, childName, 0)
+    pid
+  end
 end
+
+ 

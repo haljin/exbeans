@@ -4,8 +4,8 @@ defmodule ApplicationTest do
   @moduledoc false
 
  test "Supervision test" do
-   {:ok, pid} = Games.Supervisor.start_game(:testGame, :testPlayer, :testPlayer2)
-   {:ok, _anotherpid} = Games.Supervisor.start_game(:otherGame, :player1, :player2)
+   [game: pid, player1: _pid1, player2: _pid2] = Games.Supervisor.start_game(:testGame, :testPlayer, :testPlayer2)
+   _otherGame = Games.Supervisor.start_game(:otherGame, :player1, :player2)
 
    Process.exit(pid, :kill)
    :timer.sleep(10)

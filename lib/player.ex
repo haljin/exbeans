@@ -2,7 +2,7 @@ defmodule ExBeans.Player do
   @moduledoc """
   This module implements the player functionality in a game of Bohnanza.
 
-  The player process keeps track of all the information a player owns, that is his hand and bean fields. It also
+  The player process keeps track of all the information a player owns, that is their hand and bean fields. It also
   keeps track of the current player turn phase.
   """
   use GenStateMachine, callback_mode: [:state_functions, :state_enter]
@@ -13,11 +13,14 @@ defmodule ExBeans.Player do
 #  @game_api Application.fetch_env!(:exbeans, :game_api)
 
   @typedoc "The player's reference."
-  @type playerName :: atom() | pid()
+  @type playerName   :: atom() | pid()
+
+  @type stateName    :: :no_turn | :initial_cards | :play_cards | :discard | :bonus_cards | :end_turn
+  @type notifyPlayer :: ((stateName(), Hand.hand, BeanField.beanField) -> :ok)
 
   defmodule State do
     @moduledoc false
-    defstruct name: nil, game: nil, hand: Hand.new(), field: BeanField.new(), score: 0, cards_played: 0
+    defstruct name: nil, game: nil, hand: Hand.new(), field: BeanField.new(), score: 0, cards_played: 0, notifyPlayer: nil
   end
 
 ## -------------------------------------- API --------------------------------------
@@ -35,9 +38,9 @@ defmodule ExBeans.Player do
 
 ## -------------------------------- Upstream API -----------------------------------
   @doc "Join a new game of Bohnanza with the player."
-  @spec join_game(playerName, BeanGameName) :: :ok
-  def join_game(name, gameName) do
-    GenStateMachine.call(name, {:join_game, gameName})
+  @spec join_game(playerName, BeanGameName, notifyPlayer) :: :ok
+  def join_game(name, gameName, notifyPlayer \\ fn(_,_,_) -> :ok end) do
+    GenStateMachine.call(name, {:join_game, gameName, notifyPlayer})
   end
 
   @doc "Peek at the players hand."
@@ -62,7 +65,7 @@ defmodule ExBeans.Player do
   end
 
   @doc """
-  Discard the nth (1-based) card from the hand. Can only be done after the player played his cards and only once
+  Discard the nth (1-based) card from the hand. Can only be done after the player played their cards and only once
   per turn.
   """
   @spec discard_card(playerName, pos_integer) :: :ok | {:error, :illegal_move}
@@ -107,19 +110,19 @@ defmodule ExBeans.Player do
     GenStateMachine.cast(name, {:deal_card, card})
   end
 
-  @doc "Notify the player that his turns has started."
+  @doc "Notify the player that their turns has started."
   @spec start_turn(playerName) :: :ok
   def start_turn(name) do
     GenStateMachine.cast(name, :start_turn)
   end
 
-  @doc "Notify the player that his turns has ended."
+  @doc "Notify the player that their turns has ended."
   @spec end_turn(playerName) :: :ok
   def end_turn(name) do
     GenStateMachine.cast(name, :end_turn)
   end
 
-  @doc "Notify the player that his turns has ended."
+  @doc "Notify the player that their turns has ended."
   @spec skip_mid_cards(playerName) :: :ok
   def skip_mid_cards(name) do
     GenStateMachine.cast(name, :skip_mid_cards)
@@ -142,14 +145,15 @@ defmodule ExBeans.Player do
   def waiting_to_start(:enter, _, _) do
     :keep_state_and_data
   end
-  def waiting_to_start({:call, from}, {:join_game, gameName}, %Player.State{name: name} = state) do
-    :ok = BeanGame.register_player(gameName, name)
+  def waiting_to_start({:call, from}, {:join_game, gameName, notifyPlayer}, %Player.State{name: name} = state) do
+    :ok = BeanGame.register_player(gameName, self(), name)
     GenStateMachine.reply(from, :ok)
-    {:next_state, :no_turn, %Player.State{state | game: gameName}}
+    {:next_state, :no_turn, %Player.State{state | game: gameName, notifyPlayer: notifyPlayer}}
   end
 
   @doc false
-  def no_turn(:enter, _, _) do
+  def no_turn(:enter, _, state) do
+     pushState(:no_turn, state)
     :keep_state_and_data
   end
   def no_turn(:cast, :start_turn, %Player.State{name: name} = state) do
@@ -169,7 +173,8 @@ defmodule ExBeans.Player do
 
 
   @doc false
-  def initial_cards(:enter, _, _) do
+  def initial_cards(:enter, _, state) do
+     pushState(:no_turn, state)
     :keep_state_and_data
   end
   def initial_cards(:cast, :skip_mid_cards, %Player.State{hand: []} = state) do
@@ -217,6 +222,7 @@ defmodule ExBeans.Player do
 
   @doc false
   def play_cards(:enter, _, state) do
+     pushState(:no_turn, state)
     {:keep_state, %Player.State{ state | cards_played: 0}}
   end
   def play_cards({:call, from}, {:play_card, fieldIndex}, %Player.State{field: field, hand: hand, cards_played: n} = state) do
@@ -252,7 +258,8 @@ defmodule ExBeans.Player do
   end
 
   @doc false
-  def discard(:enter, _, _) do
+  def discard(:enter, _, state) do
+     pushState(:no_turn, state)
     :keep_state_and_data
   end
   def discard({:call, from}, {:discard, n}, %Player.State{hand: hand, game: gameName} = state) do
@@ -270,7 +277,8 @@ defmodule ExBeans.Player do
   end
 
   @doc false
-  def bonus_cards(:enter, _, %Player.State{game: gameName}) do
+  def bonus_cards(:enter, _, state = %Player.State{game: gameName}) do
+    pushState(:no_turn, state)
     BeanGame.new_mid_cards(gameName)
     :keep_state_and_data
   end
@@ -307,7 +315,8 @@ defmodule ExBeans.Player do
     handle_event(eventType, event, state)
   end
 
-  def end_turn(:enter, _, %Player.State{game: gameName}) do
+  def end_turn(:enter, _, state = %Player.State{game: gameName}) do
+    pushState(:no_turn, state)
     BeanGame.new_mid_cards(gameName)
     :keep_state_and_data
   end
@@ -349,5 +358,9 @@ defmodule ExBeans.Player do
   end
   defp handle_event({:call, from}, _, state) do
     {:keep_state, state, [{:reply, from, {:error, :illegal_move}}]}
+  end
+
+  defp pushState(stateName, %Player.State{hand: hand, field: field, notifyPlayer: notifyPlayer}) do
+    notifyPlayer.(stateName, hand, field)
   end
 end

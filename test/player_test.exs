@@ -13,7 +13,7 @@ defmodule PlayerTest do
     :ets.new(:testGameTable, [:set, :public, :named_table])
 #    :meck.unload()
     :meck.new(BeanGame)
-    :meck.expect(BeanGame, :register_player, fn (_,_) -> :ok end)
+    :meck.expect(BeanGame, :register_player, fn (_,_,_) -> :ok end)
     :meck.expect(BeanGame, :discard_cards, fn (_,_) -> :ok end)
     :meck.expect(BeanGame, :get_mid_cards,   fn (gameName) ->
                                                case :ets.lookup(:testGameTable, gameName) do
