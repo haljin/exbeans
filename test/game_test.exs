@@ -42,8 +42,8 @@ defmodule GameTest do
     initial_cards()
 
     {:ok, pid} = BeanGame.start_link(:testGame)
-    :ok = BeanGame.register_player(pid, :testProc)
-    :ok = BeanGame.register_player(pid, :testProc)
+    :ok = BeanGame.register_player(pid, self(), :testProc)
+    :ok = BeanGame.register_player(pid, self(), :testProc)
     assert_receive :start_turn
     assert_receive :skip_mid_cards
   end
@@ -53,8 +53,8 @@ defmodule GameTest do
     initial_cards()
 
     {:ok, pid} = BeanGame.start_link(:testGame)
-    :ok = BeanGame.register_player(pid, :testProc)
-    :ok = BeanGame.register_player(pid, :testProc)
+    :ok = BeanGame.register_player(pid, self(), :testProc)
+    :ok = BeanGame.register_player(pid, self(), :testProc)
     set_deck([%Beans.CoffeeBean{}, %Beans.WaxBean{}, %Beans.SoyBean{}])
 
     BeanGame.new_mid_cards(pid)
@@ -70,8 +70,8 @@ defmodule GameTest do
     initial_cards()
 
     {:ok, pid} = BeanGame.start_link(:testGame)
-    :ok = BeanGame.register_player(pid, :testProc)
-    :ok = BeanGame.register_player(pid, :testProc)
+    :ok = BeanGame.register_player(pid, self(), :testProc)
+    :ok = BeanGame.register_player(pid, self(), :testProc)
     set_deck([%Beans.CoffeeBean{}, %Beans.WaxBean{}, %Beans.SoyBean{}])
 
     BeanGame.discard_cards(pid, [%Beans.WaxBean{}])
@@ -88,8 +88,8 @@ defmodule GameTest do
     initial_cards()
 
     {:ok, pid} = BeanGame.start_link(:testGame)
-    :ok = BeanGame.register_player(pid, :testProc)
-    :ok = BeanGame.register_player(pid, :testProc)
+    :ok = BeanGame.register_player(pid, self(), :testProc)
+    :ok = BeanGame.register_player(pid, self(), :testProc)
     assert_receive :start_turn
     assert_receive :skip_mid_cards
     set_deck([%Beans.CoffeeBean{}, %Beans.WaxBean{}, %Beans.SoyBean{}, %Beans.RedBean{}, %Beans.RedBean{}, %Beans.RedBean{}])
@@ -106,8 +106,8 @@ defmodule GameTest do
     initial_cards()
 
     {:ok, pid} = BeanGame.start_link(:testGame)
-    :ok = BeanGame.register_player(pid, :testProc)
-    :ok = BeanGame.register_player(pid, :testProc)
+    :ok = BeanGame.register_player(pid, self(), :testProc)
+    :ok = BeanGame.register_player(pid, self(), :testProc)
     assert_receive :start_turn
     assert_receive :skip_mid_cards
     set_deck([%Beans.CoffeeBean{}, %Beans.WaxBean{}, %Beans.SoyBean{}, %Beans.RedBean{}, %Beans.RedBean{}, %Beans.RedBean{}])
@@ -127,8 +127,8 @@ defmodule GameTest do
     initial_cards()
 
     {:ok, pid} = BeanGame.start_link(:testGame)
-    :ok = BeanGame.register_player(pid, :testProc)
-    :ok = BeanGame.register_player(pid, :testProc)
+    :ok = BeanGame.register_player(pid, self(), :testProc)
+    :ok = BeanGame.register_player(pid, self(), :testProc)
     assert_receive :start_turn
     assert_receive :skip_mid_cards
     set_deck([%Beans.CoffeeBean{}, %Beans.WaxBean{}])

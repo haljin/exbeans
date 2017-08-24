@@ -1,45 +1,3 @@
-###	game = ExBeans.Games.Supervisor.start_game("spel", "pawel", "maarten")
-###	New game of Bohnanza started spel!
-###	[spel] Waiting for players
-###	[game: #PID<0.187.0>, player1: #PID<0.185.0>, player2: #PID<0.186.0>]
-###	iex(2)> alias ExBeans.Player
-###	ExBeans.Player
-###	iex(3)> Player.join_game(game[:player1], game[:game])
-###	[spel] Registered player: pawel
-###	:ok
-###	iex(4)> Player.join_game(game[:player2], game[:game])
-###	[spel] Registered player: maarten
-###	[maarten] Turn start!
-###	:ok
-###	iex(5)> System.get_   
-###	get_env/0    get_env/1    get_pid/0    
-###	iex(5)> System.get_
-###	get_env/0    get_env/1    get_pid/0    
-###	iex(5)> :sys.get_state game[:player1]
-###	{:no_turn,
-###	 %ExBeans.Player.State{cards_played: 0,
-###	  field: %{1 => [], 2 => [], 3 => :not_available}, game: #PID<0.187.0>,
-###	  hand: [%ExBeans.Beans.BlueBean{name: "Elixir.ExBeans.Beans.BlueBean"},
-###	   %ExBeans.Beans.GreenBean{name: "Elixir.ExBeans.Beans.GreenBean"},
-###	   %ExBeans.Beans.SoyBean{name: "Elixir.ExBeans.Beans.SoyBean"},
-###	   %ExBeans.Beans.BlackEyedBean{name: "Elixir.ExBeans.Beans.BlackEyedBean"},
-###	   %ExBeans.Beans.CoffeeBean{name: "Elixir.ExBeans.Beans.CoffeeBean"}],
-###	  name: "pawel", score: 0}}
-###	iex(6)> :sys.get_state game[:player2]
-###	{:play_cards,
-###	 %ExBeans.Player.State{cards_played: 0,
-###	  field: %{1 => [], 2 => [], 3 => :not_available}, game: #PID<0.187.0>,
-###	  hand: [%ExBeans.Beans.RedBean{name: "Elixir.ExBeans.Beans.RedBean"},
-###	   %ExBeans.Beans.BlackEyedBean{name: "Elixir.ExBeans.Beans.BlackEyedBean"},
-###	   %ExBeans.Beans.CoffeeBean{name: "Elixir.ExBeans.Beans.CoffeeBean"},
-###	   %ExBeans.Beans.ChiliBean{name: "Elixir.ExBeans.Beans.ChiliBean"},
-###	   %ExBeans.Beans.CoffeeBean{name: "Elixir.ExBeans.Beans.CoffeeBean"}],
-###	  name: "maarten", score: 0}}
-###	iex(8)> Player.play_card game[:player1], 1 
-###	{:error, :illegal_move}
-###	iex(9)> Player.play_card game[:player2], 1
-###	:ok
-
 defmodule ExBeans.Player do
   @moduledoc """
   This module implements the player functionality in a game of Bohnanza.
@@ -81,7 +39,7 @@ defmodule ExBeans.Player do
 ## -------------------------------- Upstream API -----------------------------------
   @doc "Join a new game of Bohnanza with the player."
   @spec join_game(playerName, BeanGameName, notifyPlayer) :: :ok
-  def join_game(name, gameName, notifyPlayer) do
+  def join_game(name, gameName, notifyPlayer \\ fn(_,_,_) -> :ok end) do
     GenStateMachine.call(name, {:join_game, gameName, notifyPlayer})
   end
 
