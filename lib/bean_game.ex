@@ -16,8 +16,8 @@ defmodule ExBeans.BeanGame do
     GenServer.start_link(__MODULE__, [gameName])
   end
 
-  def register_player(gameName, player) do
-    GenServer.call(gameName, {:register, player})
+  def register_player(gameName, player, playerName) do
+    GenServer.call(gameName, {:register, player, playerName})
   end
 
   def discard_cards(gameName, cards) do
@@ -53,15 +53,15 @@ defmodule ExBeans.BeanGame do
     {:ok, %State{name: gameName}}
   end
 
-  def handle_call({:register, player}, _from, %State{name: gameName, players: nil} = state) do
-    IO.puts "[#{gameName}] Registered player: #{player}"
+  def handle_call({:register, player, playerName}, _from, %State{name: gameName, players: nil} = state) do
+    IO.puts "[#{gameName}] Registered player: #{playerName}"
     {:reply, :ok, %State{state | players: [player]}}
   end
-  def handle_call({:register, player2}, _from, %State{name: gameName, players: [player1], deck: deck} = state) do
-    IO.puts "[#{gameName}] Registered player: #{player2}"
+  def handle_call({:register, player2, player2Name}, _from, %State{name: gameName, players: [player1], deck: deck} = state) do
+    IO.puts "[#{gameName}] Registered player: #{player2Name}"
     playerOrder = Enum.shuffle([player1, player2])
     deckAfterDealing = deal_cards(length(playerOrder) * 5, playerOrder, deck)
-    IO.puts "[#{gameName}] Starting game: #{player1} vs. #{player2}. #{hd(playerOrder)} will start!"
+#    IO.puts "[#{gameName}] Starting game: #{player1} vs. #{player2}. #{hd(playerOrder)} will start!"
     Player.start_turn(hd(playerOrder))
     Player.skip_mid_cards(hd(playerOrder))
     {:reply, :ok, %State{state | players: playerOrder, deck: deckAfterDealing}}
