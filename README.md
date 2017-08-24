@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/haljin/exbeans.svg?branch=master)](https://travis-ci.org/haljin/exbeans)
+
 # Exbeans
 
 **TODO: Add description**
