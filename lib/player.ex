@@ -174,7 +174,7 @@ defmodule ExBeans.Player do
 
   @doc false
   def initial_cards(:enter, _, state) do
-     pushState(:no_turn, state)
+     pushState(:initial_cards, state)
     :keep_state_and_data
   end
   def initial_cards(:cast, :skip_mid_cards, %Player.State{hand: []} = state) do
@@ -222,7 +222,7 @@ defmodule ExBeans.Player do
 
   @doc false
   def play_cards(:enter, _, state) do
-     pushState(:no_turn, state)
+     pushState(:play_cards, state)
     {:keep_state, %Player.State{ state | cards_played: 0}}
   end
   def play_cards({:call, from}, {:play_card, fieldIndex}, %Player.State{field: field, hand: hand, cards_played: n} = state) do
@@ -259,7 +259,7 @@ defmodule ExBeans.Player do
 
   @doc false
   def discard(:enter, _, state) do
-     pushState(:no_turn, state)
+     pushState(:discard, state)
     :keep_state_and_data
   end
   def discard({:call, from}, {:discard, n}, %Player.State{hand: hand, game: gameName} = state) do
@@ -278,7 +278,7 @@ defmodule ExBeans.Player do
 
   @doc false
   def bonus_cards(:enter, _, state = %Player.State{game: gameName}) do
-    pushState(:no_turn, state)
+    pushState(:bonus_cards, state)
     BeanGame.new_mid_cards(gameName)
     :keep_state_and_data
   end
@@ -316,7 +316,7 @@ defmodule ExBeans.Player do
   end
 
   def end_turn(:enter, _, state = %Player.State{game: gameName}) do
-    pushState(:no_turn, state)
+    pushState(:end_turn, state)
     BeanGame.new_mid_cards(gameName)
     :keep_state_and_data
   end
