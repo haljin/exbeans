@@ -11,6 +11,7 @@ defmodule GameTest do
     :meck.new(Player)
     :meck.expect(Player, :deal_card, 2, :ok)
     :meck.expect(Player, :start_turn, 1, fn(_) -> send(:testProc, :start_turn) end)
+    :meck.expect(Player, :start_game, 1, fn(_) -> send(:testProc, :start_game) end)
     :meck.expect(Player, :skip_mid_cards, 1, fn(_) -> send(:testProc, :skip_mid_cards) end)
     :meck.expect(Player, :end_turn, 1, fn(_) -> send(:testProc, :end_turn) end)
     :meck.expect(Player, :end_game, 1, fn(_) -> send(:testProc, :end_game) end)
@@ -45,6 +46,7 @@ defmodule GameTest do
     :ok = BeanGame.register_player(pid, self(), :testProc)
     :ok = BeanGame.register_player(pid, self(), :testProc)
     assert_receive :start_turn
+    assert_receive :start_game
     assert_receive :skip_mid_cards
   end
 

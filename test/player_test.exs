@@ -43,13 +43,13 @@ defmodule PlayerTest do
     {:ok, player1} = Player.start_link(:testPlayer)
     assert_state :waiting_to_start, for: player1
     :ok = Player.join_game(player1, :testGame)
-    assert_state :no_turn, for: player1
     Player.stop(player1)
   end
 
   test "Player playing cards"  do
     {:ok, player1} = Player.start_link(:testPlayer)
     :ok = Player.join_game(player1, :testGame)
+    Player.start_game(player1)
     create_hand(player1)
     assert_state :no_turn, for: player1
 
@@ -69,6 +69,7 @@ defmodule PlayerTest do
   test "Passing on playing cards" do
     {:ok, player1} = Player.start_link(:testPlayer)
     :ok = Player.join_game(player1, :testGame)
+    Player.start_game(player1)
     create_hand(player1)
 
     Player.start_turn(player1)
@@ -87,6 +88,7 @@ defmodule PlayerTest do
   test "Discarding" do
     {:ok, player1} = Player.start_link(:testPlayer)
     :ok = Player.join_game(player1, :testGame)
+    Player.start_game(player1)
     create_hand(player1)
 
     Player.start_turn(player1)
@@ -104,6 +106,7 @@ defmodule PlayerTest do
   test "Pass discarding" do
     {:ok, player1} = Player.start_link(:testPlayer)
     :ok = Player.join_game(player1, :testGame)
+    Player.start_game(player1)
     create_hand(player1)
 
     Player.start_turn(player1)
@@ -121,6 +124,7 @@ defmodule PlayerTest do
   test "No cards in hand" do
     {:ok, player1} = Player.start_link(:testPlayer)
     :ok = Player.join_game(player1, :testGame)
+    Player.start_game(player1)
 
     Player.start_turn(player1)
     Player.skip_mid_cards(player1)
@@ -133,6 +137,7 @@ defmodule PlayerTest do
     {:ok, player1} = Player.start_link(:testPlayer)
     :ok = Player.join_game(player1, :testGame)
     Player.deal_card(player1, %Beans.GreenBean{})
+    Player.start_game(player1)
 
     Player.start_turn(player1)
     Player.skip_mid_cards(player1)
@@ -147,6 +152,7 @@ defmodule PlayerTest do
     {:ok, player1} = Player.start_link(:midTestPlayer)
     :ok = Player.join_game(player1, :testGame)
     Player.deal_card(player1, %Beans.GreenBean{})
+    Player.start_game(player1)
 
     Player.start_turn(player1)
     Player.skip_mid_cards(player1)
@@ -169,6 +175,7 @@ defmodule PlayerTest do
     {:ok, player1} = Player.start_link(:midTestPlayer2)
     :ok = Player.join_game(player1, :testGame)
     Player.deal_card(player1, %Beans.GreenBean{})
+    Player.start_game(player1)
     Player.start_turn(player1)
     Player.skip_mid_cards(player1)
     assert_state :play_cards, for: player1
@@ -188,6 +195,7 @@ defmodule PlayerTest do
     {:ok, player1} = Player.start_link(:midTestPlayer3)
     :ok = Player.join_game(player1, :testGame)
     Player.deal_card(player1, %Beans.GreenBean{})
+    Player.start_game(player1)
     Player.start_turn(player1)
     Player.skip_mid_cards(player1)
     assert_state :play_cards, for: player1
@@ -207,6 +215,7 @@ defmodule PlayerTest do
     {:ok, player1} = Player.start_link(:initTestPlayer)
     :ok = Player.join_game(player1, :testGame)
     Player.deal_card(player1, %Beans.GreenBean{})
+    Player.start_game(player1)
     Player.start_turn(player1)
     assert_state :initial_cards, for: player1
     set_mid_cards(:testGame, [%Beans.GreenBean{}, %Beans.SoyBean{}])
@@ -222,6 +231,7 @@ defmodule PlayerTest do
     {:ok, player1} = Player.start_link(:initTestPlayer2)
     :ok = Player.join_game(player1, :testGame)
     Player.deal_card(player1, %Beans.GreenBean{})
+    Player.start_game(player1)
     Player.start_turn(player1)
     assert_state :initial_cards, for: player1
     set_mid_cards(:testGame, [%Beans.GreenBean{}, %Beans.SoyBean{}])
@@ -238,6 +248,7 @@ defmodule PlayerTest do
     {:ok, player1} = Player.start_link(:initTestPlayer3)
     :ok = Player.join_game(player1, :testGame)
     Player.deal_card(player1, %Beans.GreenBean{})
+    Player.start_game(player1)
     Player.start_turn(player1)
     assert_state :initial_cards, for: player1
     set_mid_cards(:testGame, [%Beans.GreenBean{}, %Beans.SoyBean{}])
@@ -252,6 +263,7 @@ defmodule PlayerTest do
     :ok = Player.join_game(player1, :testGame)
     Player.deal_card(player1, %Beans.GreenBean{})
     Player.deal_card(player1, %Beans.WaxBean{})
+    Player.start_game(player1)
     Player.start_turn(player1)
     assert_state :initial_cards, for: player1
     set_mid_cards(:testGame, [%Beans.GreenBean{}, %Beans.GreenBean{}, %Beans.GreenBean{}])
@@ -271,6 +283,7 @@ defmodule PlayerTest do
     :ok = Player.join_game(player1, :testGame)
     Player.deal_card(player1, %Beans.RedBean{})
     Player.deal_card(player1, %Beans.WaxBean{})
+    Player.start_game(player1)
     Player.start_turn(player1)
     {:error, :illegal_move} = Player.purchase_third_field(player1)
 

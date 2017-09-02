@@ -1,19 +1,22 @@
 defmodule ExBeans.BeanGame do
   @moduledoc false
-  @type gameName :: atom | pid
+  @type game_name :: atom | pid
+  @type game_event :: :new_mid_card | :new_discard | :game_end 
+  @type game_callback :: ((game_event, term) -> :ok)
   
+  require Logger
   alias ExBeans.Player
   alias ExBeans.Deck
   use GenServer
 
     defmodule State do
-      defstruct name: nil, deck: Deck.new(), discard: [], players: nil, extra_cards: [], game_over: false
+      defstruct name: nil, deck: Deck.new(), discard: [], players: nil, extra_cards: [], game_over: false, callback: nil
     end
 
 
 ## API
-  def start_link(gameName) do
-    GenServer.start_link(__MODULE__, [gameName])
+  def start_link(gameName, callback \\ fn(_,_) -> :ok end) do
+    GenServer.start_link(__MODULE__, [gameName, callback])
   end
 
   def register_player(gameName, player, playerName) do
@@ -46,22 +49,23 @@ defmodule ExBeans.BeanGame do
 
 ##  GenServer callbacks
 
-  def init([gameName]) do
-    IO.puts "New game of Bohnanza started #{gameName}!"
-    IO.puts "[#{gameName}] Waiting for players"
+  def init([gameName, callback]) do
+    Logger.debug "New game of Bohnanza started #{gameName}!"
+    Logger.debug "[#{gameName}] Waiting for players"
 
-    {:ok, %State{name: gameName}}
+    {:ok, %State{name: gameName, callback: callback}}
   end
 
   def handle_call({:register, player, playerName}, _from, %State{name: gameName, players: nil} = state) do
-    IO.puts "[#{gameName}] Registered player: #{playerName}"
+    Logger.debug "[#{gameName}] Registered player: #{playerName}"
     {:reply, :ok, %State{state | players: [player]}}
   end
   def handle_call({:register, player2, player2Name}, _from, %State{name: gameName, players: [player1], deck: deck} = state) do
-    IO.puts "[#{gameName}] Registered player: #{player2Name}"
+    Logger.debug "[#{gameName}] Registered player: #{player2Name}"
     playerOrder = Enum.shuffle([player1, player2])
     deckAfterDealing = deal_cards(length(playerOrder) * 5, playerOrder, deck)
-#    IO.puts "[#{gameName}] Starting game: #{player1} vs. #{player2}. #{hd(playerOrder)} will start!"
+    # Logger.debug "[#{gameName}] Starting game: #{player1} vs. #{player2}. #{hd(playerOrder)} will start!"
+    for player <- playerOrder do Player.start_game(player) end
     Player.start_turn(hd(playerOrder))
     Player.skip_mid_cards(hd(playerOrder))
     {:reply, :ok, %State{state | players: playerOrder, deck: deckAfterDealing}}
@@ -146,9 +150,9 @@ defmodule ExBeans.BeanGame do
     score = Player.end_game(currentPlayer)
     score2 = Player.end_game(nextPlayer)
     cond do
-      score > score2 -> IO.puts("[#{gameName}] Player #{currentPlayer} wins with #{score} over #{score2}!")
-      score < score2 -> IO.puts("[#{gameName}] Player #{nextPlayer} wins with #{score2} over #{score}!")
-      score == score2 -> IO.puts("[#{gameName}] It's a draw!")
+      score > score2 -> Logger.debug("[#{gameName}] Player #{currentPlayer} wins with #{score} over #{score2}!")
+      score < score2 -> Logger.debug("[#{gameName}] Player #{nextPlayer} wins with #{score2} over #{score}!")
+      score == score2 -> Logger.debug("[#{gameName}] It's a draw!")
     end
   end
 end
