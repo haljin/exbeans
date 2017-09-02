@@ -1,8 +1,8 @@
 defmodule ExBeans.BeanGame do
   @moduledoc false
   @type game_name :: atom | pid
-  @type game_event :: :new_mid_card | :new_discard | :game_end 
-  @type game_callback :: ((game_event, term) -> :ok)
+  @type game_event :: :new_mid_cards | :new_discards
+  @type game_callback :: ((game_event, list(ExBeans.Beans.bean())) -> :ok)
   
   require Logger
   alias ExBeans.Player
@@ -86,16 +86,19 @@ defmodule ExBeans.BeanGame do
     end
   end
 
-  def handle_cast({:discard, cards}, %State{discard: disc} = state) do
+  def handle_cast({:discard, cards}, %State{discard: disc, callback: callback} = state) do
+    callback.(:new_discards, cards)
     {:noreply, %State{state | discard: cards ++ disc}}
   end
-  def handle_cast(:new_bonus_cards, %State{deck: deck, discard: discard} = state) do
+  def handle_cast(:new_bonus_cards, %State{deck: deck, discard: discard, callback: callback} = state) do
      case draw_cards(3, deck, []) do
        {[], newMid} ->
          {midWithDiscard, newDiscard} = fill_discard(newMid, discard)
+         callback.(:new_mid_cards, midWithDiscard)
          {:noreply, %State{state | extra_cards: midWithDiscard, discard: newDiscard, game_over: true}}
        {newDeck, newMid} ->
          {midWithDiscard, newDiscard} = fill_discard(newMid, discard)
+         callback.(:new_mid_cards, midWithDiscard)
          {:noreply, %State{state | extra_cards: midWithDiscard, discard: newDiscard, deck: newDeck}}
      end
   end
