@@ -99,10 +99,12 @@ defmodule ExBeans.BeanGame do
        {[], newMid} ->
          {midWithDiscard, newDiscard} = fill_discard(newMid, discard)
          callback.(:new_mid_cards, midWithDiscard)
+         unless newDiscard == [], do: callback.(:new_discards, [hd(newDiscard)])
          {:noreply, %State{state | extra_cards: midWithDiscard, discard: newDiscard, game_over: true}}
        {newDeck, newMid} ->
          {midWithDiscard, newDiscard} = fill_discard(newMid, discard)
          callback.(:new_mid_cards, midWithDiscard)
+         unless newDiscard == [], do: callback.(:new_discards, [hd(newDiscard)])
          {:noreply, %State{state | extra_cards: midWithDiscard, discard: newDiscard, deck: newDeck}}
      end
   end
