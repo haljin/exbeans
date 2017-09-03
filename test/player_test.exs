@@ -97,7 +97,9 @@ defmodule PlayerTest do
     :ok = Player.play_card(player1, 1)
     :ok = Player.play_card(player1, 2)
     assert_state :discard, for: player1
+    someCards = Player.see_hand(player1)
     :ok = Player.discard_card(player1, 1)
+    assert tl(someCards) == Player.see_hand(player1)
     assert_state :bonus_cards, for: player1
 
     Player.stop(player1)

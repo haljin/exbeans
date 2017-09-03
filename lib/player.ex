@@ -277,7 +277,7 @@ defmodule ExBeans.Player do
     :keep_state_and_data
   end
   def discard({:call, from}, {:discard, n}, %Player.State{hand: hand, game: gameName} = state) do
-    {discarded, newHand} = Hand.discard_card(hand, n + 1)
+    {discarded, newHand} = Hand.discard_card(hand, n - 1)
     BeanGame.discard_cards(gameName, [discarded])
     GenStateMachine.reply(from, :ok)
     {:next_state, :bonus_cards, %Player.State{ state | hand: newHand}}
