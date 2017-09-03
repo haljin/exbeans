@@ -47,6 +47,10 @@ defmodule ExBeans.BeanGame do
     GenServer.cast(gameName, :player_done)
   end
 
+  def set_callback(gameName, callback) do
+    GenServer.cast(gameName, {:callback, callback})
+  end
+
 ##  GenServer callbacks
 
   def init([gameName, callback]) do
@@ -118,6 +122,9 @@ defmodule ExBeans.BeanGame do
         if bonus_cards == [] do Player.skip_mid_cards(nextPlayer) end
         {:noreply, %State{state| deck: newDeck, players: [nextPlayer, currentPlayer]}}
     end
+  end
+  def handle_cast( {:callback, callback}, state) do
+    {:noreply, %State{state| callback: callback}}
   end
 
   defp draw_cards(n, deck, acc) when n > 0 do
