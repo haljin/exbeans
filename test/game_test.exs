@@ -76,9 +76,14 @@ defmodule GameTest do
     :ok = BeanGame.register_player(pid, self(), :testProc)
     set_deck([%Beans.CoffeeBean{}, %Beans.WaxBean{}, %Beans.SoyBean{}])
 
+    BeanGame.set_callback(pid, fn(event, data) -> send(:testProc, {event, data}) end)
+
     BeanGame.discard_cards(pid, [%Beans.WaxBean{}])
     BeanGame.new_mid_cards(pid)
     [%Beans.WaxBean{}, %Beans.CoffeeBean{}, %Beans.WaxBean{}, %Beans.SoyBean{}] = BeanGame.get_mid_cards(pid)
+
+    assert_receive {:new_discards, []} 
+    assert_receive {:new_mid_cards, [%Beans.WaxBean{}, %Beans.CoffeeBean{}, %Beans.WaxBean{}, %Beans.SoyBean{}]}
 
     {:ok, %Beans.SoyBean{}} = BeanGame.get_mid_card(pid, 3)
     :ok = BeanGame.remove_mid_card(pid, 3)
