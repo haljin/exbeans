@@ -98,13 +98,11 @@ defmodule ExBeans.BeanGame do
      case draw_cards(3, deck, []) do
        {[], newMid} ->
          {midWithDiscard, newDiscard} = fill_discard(newMid, discard)
-         callback.(:new_mid_cards, midWithDiscard)
-         unless newDiscard == [], do: callback.(:new_discards, [hd(newDiscard)])
+         report(callback, midWithDiscard, newDiscard)
          {:noreply, %State{state | extra_cards: midWithDiscard, discard: newDiscard, game_over: true}}
        {newDeck, newMid} ->
          {midWithDiscard, newDiscard} = fill_discard(newMid, discard)
-         callback.(:new_mid_cards, midWithDiscard)
-         unless newDiscard == [], do: callback.(:new_discards, [hd(newDiscard)])
+         report(callback, midWithDiscard, newDiscard)
          {:noreply, %State{state | extra_cards: midWithDiscard, discard: newDiscard, deck: newDeck}}
      end
   end
@@ -166,5 +164,14 @@ defmodule ExBeans.BeanGame do
       score < score2 -> Logger.debug("[#{gameName}] Player #{nextPlayer} wins with #{score2} over #{score}!")
       score == score2 -> Logger.debug("[#{gameName}] It's a draw!")
     end
+  end
+
+  defp report(callback, midCards, []) do
+    callback.(:new_mid_cards, midCards)
+    callback.(:new_discards, [])    
+  end
+  defp report(callback, midCards, newDiscard) do
+    callback.(:new_mid_cards, midCards)
+    callback.(:new_discards, [hd(newDiscard)])    
   end
 end
